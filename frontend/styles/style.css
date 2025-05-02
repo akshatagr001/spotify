@@ -1,0 +1,552 @@
+*{
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background: linear-gradient(to bottom, #1e1e1e, #121212);
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+    margin-bottom: 100px;
+    min-height: 100vh;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    color: #1DB954;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Song Grid Layout */
+#song-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 25px;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Song Card Design */
+#song-list button {
+    background: #282828;
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    min-height: 260px;
+    position: relative;
+}
+
+#song-list button img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px 8px 0 0;
+    transition: transform 0.3s ease;
+}
+
+#song-list button span {
+    color: white;
+    font-size: 20px;
+    padding: 15px 10px;
+    text-align: center;
+    width: 100%;
+    background: rgba(40, 40, 40, 0.95);
+    margin-top: auto;
+}
+
+#song-list button:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    background: #383838;
+}
+
+#song-list button:hover img {
+    transform: scale(1.05);
+}
+
+#song-list button.active {
+    background: #1DB954;
+    box-shadow: 0 0 20px rgba(29, 185, 84, 0.3);
+}
+
+#song-list button.active span {
+    background: rgba(29, 185, 84, 0.95);
+}
+
+/* Player Controls */
+#custom-player {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background: rgba(24, 24, 24, 0.98);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+.player-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 30%;
+}
+
+.player-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 40%;
+}
+
+.player-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 15px;
+    width: 30%;
+}
+
+#now-playing {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#now-playing-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+#now-playing-info {
+    text-align: left;
+}
+
+#now-playing-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+
+#now-playing-artist {
+    font-size: 12px;
+    color: #b3b3b3;
+    margin: 0;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 10px;
+}
+
+#play-pause, #prev-track, #next-track {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+#play-pause {
+    background: white;
+    color: black;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#play-pause:hover {
+    transform: scale(1.1);
+    background: #1DB954;
+    color: white;
+}
+
+#prev-track:hover, #next-track:hover {
+    transform: scale(1.1);
+    color: #1DB954;
+}
+
+/* Progress Bar */
+.progress-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #b3b3b3;
+}
+
+#progress {
+    flex-grow: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #4f4f4f;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+#progress::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, #1DB954 var(--value), #4f4f4f var(--value));
+}
+
+#progress::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#progress::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #1DB954;
+}
+
+/* Volume Control */
+.volume-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}                         
+
+#volume-control {
+    width: 100px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance:none; 
+    background: #4f4f4f;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+#volume-control::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#volume-control::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #1DB954;
+}
+
+#shuffle {
+    background: transparent;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    padding: 8px;
+    transition: all 0.2s ease;
+}
+
+#shuffle:hover, #shuffle.active {
+    color: #1DB954;
+}
+
+/* Search Container */
+.search-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 30px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#search-input {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 25px;
+    background: #282828;
+    color: white;
+    font-size: 16px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+#search-input:focus {
+    outline: none;
+    background: #383838;
+    box-shadow: 0 0 0 2px #1DB954;
+}
+
+#search-btn {
+    background: #1DB954;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#search-btn:hover {
+    transform: scale(1.05);
+    background: #1ed760;
+}
+
+/* Top Controls Layout */
+.top-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 800px;
+    margin: 0 auto 30px auto;
+}
+
+/* Playlist Controls */
+.playlist-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+#create-playlist-btn {
+    background: #1DB954;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+#create-playlist-btn:hover {
+    background: #1ed760;
+    transform: scale(1.05);
+}
+
+#playlist-select {
+    background: #282828;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+#playlist-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #1DB954;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1001;
+}
+
+.modal-content {
+    position: relative;
+    background: #282828;
+    margin: 50px auto;
+    padding: 30px;
+    max-width: 600px;
+    border-radius: 10px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #b3b3b3;
+}
+
+.close:hover {
+    color: white;
+}
+
+#playlist-name {
+    width: 100%;
+    padding: 12px;
+    margin: 20px 0;
+    background: #383838;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+}
+
+#playlist-name:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #1DB954;
+}
+
+.song-selection {
+    margin: 20px 0;
+}
+
+#playlist-song-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+}
+
+#playlist-song-list label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #383838;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#playlist-song-list input[type="checkbox"] {
+    accent-color: #1DB954;
+}
+
+#save-playlist {
+    background: #1DB954;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 30px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+#save-playlist:hover {
+    background: #1ed760;
+    transform: scale(1.02);
+}
+
+/* Context Menu Styles */
+.context-menu {
+    position: fixed;
+    background: #282828;
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 200px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    z-index: 9999;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+}
+
+.context-menu.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: all;
+}
+
+.context-menu-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    font-size: 14px;
+    transition: background-color 0.2s;
+    position: relative;
+    white-space: nowrap;
+}
+
+.context-menu-item:hover {
+    background-color: #383838;
+}
+
+.context-menu-item i {
+    width: 16px;
+    color: #1DB954;
+}
+
+.context-menu-item.has-submenu {
+    padding-right: 24px;
+}
+
+.submenu-arrow {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #b3b3b3;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background-color: #404040;
+    margin: 4px 0;
+}
+
+.context-submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    background: #282828;
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 180px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    max-height: calc(100vh - 20px);
+    overflow-y: auto;
+}
+
+.context-menu-item:hover .context-submenu {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+}
