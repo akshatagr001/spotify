@@ -23,7 +23,7 @@ const playlistSongList = document.getElementById('playlist-song-list');
 const savePlaylistBtn = document.getElementById('save-playlist');
 
 // Network configuration
-const API_URL = `https://spotify-backend-ada8.onrender.com`; // Use current hostname
+const API_URL = `https://spotify-backend-6mr0.onrender.com`; // Use current hostname
 
 let allSongs = []; // Store all songs
 let filteredSongs = []; // Store filtered songs
