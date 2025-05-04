@@ -586,3 +586,46 @@ body.light-theme #search-btn {
     background: #1DB954;
     color: white;
 }
+
+/* Sliding tab for recommended songs */
+.recommended-songs {
+    margin-top: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+
+.recommended-songs .sliding-tab {
+    display: flex;
+    gap: 10px;
+    animation: slide 10s linear infinite;
+}
+
+.recommended-songs .song {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+@keyframes slide {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+
+/* Dark theme styles */
+body.dark-theme {
+    background-color: black;
+    color: white;
+}
+
+body.dark-theme .recommended-songs {
+    background-color: #333;
+}
+
+body.dark-theme .recommended-songs .song {
+    background-color: #555;
+    color: white;
+}

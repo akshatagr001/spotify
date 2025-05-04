@@ -76,7 +76,26 @@
         </div>
     </div>
 
+    <div class="recommended-songs">
+        <h3>Recommended Songs</h3>
+        <div class="sliding-tab">
+            <div class="song" id="recommended-song-1">Song 1</div>
+            <div class="song" id="recommended-song-2">Song 2</div>
+            <div class="song" id="recommended-song-3">Song 3</div>
+            <!-- Add more recommended songs dynamically -->
+        </div>
+    </div>
+
+    <!-- Add a theme toggle button -->
+    <button id="theme-toggle">Toggle Theme</button>
+
     <audio id="audio-player"></audio>
     <script src="scripts/main.js"></script>
+    <script>
+        // JavaScript for sliding tab and theme toggle
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+        });
+    </script>
 </body>
 </html>
