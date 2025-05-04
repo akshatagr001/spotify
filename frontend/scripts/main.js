@@ -22,15 +22,6 @@ const playlistNameInput = document.getElementById('playlist-name');
 const playlistSongList = document.getElementById('playlist-song-list');
 const savePlaylistBtn = document.getElementById('save-playlist');
 
-// Add recently played DOM element
-const recentlyPlayedList = document.getElementById('recently-played-list');
-
-// Add favorite songs DOM element
-const favoriteSongsList = document.getElementById('favorite-songs-list');
-
-// Add theme switch DOM element
-const themeSwitch = document.getElementById('theme-switch');
-
 // Network configuration
 const API_URL = `https://spotify-backend-6mr0.onrender.com`; // Use current hostname
 
@@ -44,12 +35,6 @@ let shuffleMode = false;
 // Playlist management
 let playlists = {};
 let currentPlaylist = null;
-
-// Recently played songs
-let recentlyPlayed = [];
-
-// Favorite songs
-let favoriteSongs = [];
 
 // Load playlists when the app starts
 fetch(`${API_URL}/playlists`)
@@ -251,76 +236,23 @@ function renderSongList() {
 function playSong(index) {
     currentIndex = index;
     const song = songList[index];
-
-    // Add to recently played
-    addToRecentlyPlayed(song);
-
+    
     // Update UI
     if (currentButton) currentButton.classList.remove('active');
     currentButton = songListDiv.children[index];
     currentButton.classList.add('active');
-
-    // Update now playing info
+    
+    // Update now playing info with network URLs
     nowPlayingImg.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
     nowPlayingTitle.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
-
-    // Update audio source
+    
+    // Update audio source with network URL
     audioPlayer.src = `${API_URL}/stream/${song.name}`;
     audioPlayer.play()
         .then(() => {
             playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         })
         .catch(error => console.error('Error playing audio:', error));
-}
-
-// Add functionality for recently played songs
-function addToRecentlyPlayed(song) {
-    if (!recentlyPlayed.includes(song)) {
-        recentlyPlayed.unshift(song);
-        if (recentlyPlayed.length > 5) recentlyPlayed.pop();
-        renderRecentlyPlayed();
-    }
-}
-
-function renderRecentlyPlayed() {
-    recentlyPlayedList.innerHTML = '';
-    recentlyPlayed.forEach(song => {
-        const div = document.createElement('div');
-        div.textContent = song.name;
-        recentlyPlayedList.appendChild(div);
-    });
-}
-
-// Add functionality for dark/light mode toggle
-themeSwitch.addEventListener('change', () => {
-    document.body.classList.toggle('light-mode', themeSwitch.checked);
-});
-
-// Add functionality for favorite songs
-function toggleFavorite(song) {
-    if (favoriteSongs.includes(song)) {
-        favoriteSongs = favoriteSongs.filter(fav => fav !== song);
-    } else {
-        favoriteSongs.push(song);
-    }
-    renderFavoriteSongs();
-}
-
-function renderFavoriteSongs() {
-    favoriteSongsList.innerHTML = '';
-    favoriteSongs.forEach(song => {
-        const div = document.createElement('div');
-        div.textContent = song.name;
-        favoriteSongsList.appendChild(div);
-    });
-}
-
-// Add download functionality
-function downloadSong(song) {
-    const link = document.createElement('a');
-    link.href = `${API_URL}/static/songs/${song.name}`;
-    link.download = song.name;
-    link.click();
 }
 
 // Play/Pause button
@@ -521,26 +453,6 @@ function showContextMenu(e, song) {
         removeItem.onclick = () => removeSongFromPlaylist(currentPlaylist, currentContextSong);
         contextMenu.appendChild(removeItem);
     }
-    
-    // Add "Favorite" option
-    const favoriteItem = document.createElement('div');
-    favoriteItem.className = 'context-menu-item';
-    favoriteItem.innerHTML = '<i class="fas fa-heart"></i>Favorite';
-    favoriteItem.onclick = () => {
-        toggleFavorite(currentContextSong);
-        hideContextMenu();
-    };
-    contextMenu.appendChild(favoriteItem);
-    
-    // Add "Download" option
-    const downloadItem = document.createElement('div');
-    downloadItem.className = 'context-menu-item';
-    downloadItem.innerHTML = '<i class="fas fa-download"></i>Download';
-    downloadItem.onclick = () => {
-        downloadSong(currentContextSong);
-        hideContextMenu();
-    };
-    contextMenu.appendChild(downloadItem);
     
     // Add to DOM
     document.body.appendChild(contextMenu);

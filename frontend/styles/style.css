@@ -550,39 +550,3 @@ h1 {
     transform: translateX(0);
     pointer-events: all;
 }
-
-/* Recently Played Section */
-.recently-played {
-    margin-top: 20px;
-    padding: 10px;
-    background: #282828;
-    border-radius: 8px;
-}
-
-.recently-played h2 {
-    color: #1DB954;
-}
-
-/* Favorite Songs Section */
-.favorite-songs {
-    margin-top: 20px;
-    padding: 10px;
-    background: #282828;
-    border-radius: 8px;
-}
-
-.favorite-songs h2 {
-    color: #1DB954;
-}
-
-/* Theme Toggle */
-.theme-toggle {
-    margin: 10px 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#theme-switch {
-    cursor: pointer;
-}
