@@ -550,3 +550,39 @@ h1 {
     transform: translateX(0);
     pointer-events: all;
 }
+
+/* Light Theme Styles */
+body.light-theme {
+    background: linear-gradient(to bottom, #ffffff, #f0f0f0);
+    color: black;
+}
+
+body.light-theme h1 {
+    color: #1DB954;
+    text-shadow: 0 2px 4px rgba(255,255,255,0.3);
+}
+
+body.light-theme #song-list button {
+    background: #f9f9f9;
+    color: black;
+}
+
+body.light-theme #song-list button span {
+    background: rgba(240, 240, 240, 0.95);
+    color: black;
+}
+
+body.light-theme #custom-player {
+    background: rgba(255, 255, 255, 0.98);
+    color: black;
+}
+
+body.light-theme #search-input {
+    background: #f0f0f0;
+    color: black;
+}
+
+body.light-theme #search-btn {
+    background: #1DB954;
+    color: white;
+}

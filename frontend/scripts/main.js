@@ -560,3 +560,37 @@ async function removeSongFromPlaylist(playlistName, song) {
 // Hide context menu when switching views
 playlistSelect.addEventListener('change', hideContextMenu);
 searchInput.addEventListener('input', hideContextMenu);
+
+// Theme toggle functionality
+const themeToggleBtn = document.createElement('button');
+themeToggleBtn.id = 'theme-toggle';
+themeToggleBtn.textContent = 'Toggle Theme';
+themeToggleBtn.style.position = 'fixed';
+themeToggleBtn.style.top = '10px';
+themeToggleBtn.style.right = '10px';
+themeToggleBtn.style.padding = '10px';
+themeToggleBtn.style.backgroundColor = '#1DB954';
+themeToggleBtn.style.color = 'white';
+themeToggleBtn.style.border = 'none';
+themeToggleBtn.style.borderRadius = '5px';
+themeToggleBtn.style.cursor = 'pointer';
+document.body.appendChild(themeToggleBtn);
+
+// Set default theme to dark
+if (!localStorage.getItem('theme')) {
+    localStorage.setItem('theme', 'dark');
+}
+
+document.body.classList.toggle('light-theme', localStorage.getItem('theme') === 'light');
+
+themeToggleBtn.addEventListener('click', () => {
+    const currentTheme = localStorage.getItem('theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    document.body.classList.toggle('light-theme', newTheme === 'light');
+});
+
+// Add theme toggle functionality
+document.getElementById('theme-toggle').addEventListener('click', () => {
+    document.body.classList.toggle('light-theme');
+});
