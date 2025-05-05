@@ -156,6 +156,20 @@ async def delete_playlist(playlist_name: str):
             content={"message": f"Error deleting playlist: {str(e)}"}
         )
 
+@app.get("/recommendations")
+def get_recommendations():
+    try:
+        # Example static recommendations; replace with dynamic logic
+        recommendations = [
+            {"title": "Song 1"},
+            {"title": "Song 2"},
+            {"title": "Song 3"},
+        ]
+        return {"recommendations": recommendations}
+    except Exception as e:
+        logger.error(f"Error fetching recommendations: {e}")
+        return {"recommendations": [], "error": str(e)}
+
 # Initialize Tortoise ORM
 register_tortoise(
     app,
