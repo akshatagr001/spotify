@@ -91,7 +91,7 @@
     <audio id="audio-player"></audio>
     <script src="scripts/main.js"></script>
     <script>
-        // JavaScript for sliding tab and theme toggle
+        // JavaScript for sliding tab buttons
         const slidingTab = document.getElementById('sliding-tab');
         const slideLeft = document.getElementById('slide-left');
         const slideRight = document.getElementById('slide-right');
@@ -104,24 +104,7 @@
             slidingTab.scrollBy({ left: 200, behavior: 'smooth' });
         });
 
-        function fetchRecommendations() {
-            fetch('/api/recommendations')
-                .then(response => response.json())
-                .then(data => {
-                    slidingTab.innerHTML = '';
-                    data.forEach(song => {
-                        const songDiv = document.createElement('div');
-                        songDiv.className = 'song';
-                        songDiv.textContent = song.title;
-                        slidingTab.appendChild(songDiv);
-                    });
-                });
-        }
-
-        // Fetch recommendations periodically
-        setInterval(fetchRecommendations, 60000); // Update every 60 seconds
-        fetchRecommendations(); // Initial fetch
-
+        // Theme toggle functionality
         document.getElementById('theme-toggle').addEventListener('click', () => {
             document.body.classList.toggle('dark-theme');
         });
