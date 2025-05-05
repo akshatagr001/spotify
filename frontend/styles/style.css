@@ -592,20 +592,20 @@ body.light-theme #search-btn {
     margin-top: 10px;
     overflow: hidden;
     white-space: nowrap;
-    background-color: #f0f0f0;
-    padding: 10px 40px;  /* Increased padding to accommodate scroll buttons */
+    background-color: #282828;
+    padding: 20px 40px;
     position: relative;
-    min-height: 160px;   /* Ensure consistent height */
+    min-height: 320px;
 }
 
 .recommended-songs .sliding-tab {
     display: flex;
-    gap: 15px;          /* Increased gap between songs */
+    gap: 25px;
     overflow-x: auto;
     scroll-behavior: smooth;
     padding: 10px 0;
-    -ms-overflow-style: none;  /* Hide scrollbar IE and Edge */
-    scrollbar-width: none;     /* Hide scrollbar Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 .recommended-songs .sliding-tab::-webkit-scrollbar {
@@ -613,17 +613,73 @@ body.light-theme #search-btn {
 }
 
 .recommended-songs .song {
-    flex: 0 0 130px;    /* Fixed width for each song card */
+    flex: 0 0 200px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px;
+    padding: 0;
     background-color: #282828;
     color: white;
     border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.2s ease, background-color 0.3s ease;
-    max-width: 130px;
+    transition: all 0.3s ease;
+    min-height: 260px;
+    position: relative;
+    overflow: hidden;
+}
+
+.recommended-songs .song img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px 8px 0 0;
+    transition: transform 0.3s ease;
+}
+
+.recommended-songs .song span {
+    color: white;
+    font-size: 16px;
+    padding: 15px 10px;
+    text-align: center;
+    width: 100%;
+    background: rgba(40, 40, 40, 0.95);
+    margin-top: auto;
+    white-space: normal;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recommended-songs .song:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    background: #383838;
+}
+
+.recommended-songs .song:hover img {
+    transform: scale(1.05);
+}
+
+#slide-left, #slide-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    padding: 20px 15px;
+    cursor: pointer;
+    z-index: 2;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+#slide-left { left: 0; }
+#slide-right { right: 0; }
+
+#slide-left:hover, #slide-right:hover {
+    background: rgba(29, 185, 84, 0.8);
 }
 
 /* Dark theme styles */
