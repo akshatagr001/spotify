@@ -594,3 +594,31 @@ themeToggleBtn.addEventListener('click', () => {
 document.getElementById('theme-toggle').addEventListener('click', () => {
     document.body.classList.toggle('light-theme');
 });
+
+// Function to fetch and display recommendations
+function fetchRecommendations() {
+    fetch('/api/recommendations')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch recommendations');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const slidingTab = document.getElementById('sliding-tab');
+            slidingTab.innerHTML = '';
+            data.forEach(song => {
+                const songDiv = document.createElement('div');
+                songDiv.className = 'song';
+                songDiv.textContent = song.title;
+                slidingTab.appendChild(songDiv);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching recommendations:', error);
+        });
+}
+
+// Fetch recommendations periodically
+setInterval(fetchRecommendations, 60000); // Update every 60 seconds
+fetchRecommendations(); // Initial fetch
