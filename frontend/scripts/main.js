@@ -597,22 +597,26 @@ themeToggleBtn.addEventListener('click', () => {
     updateThemeToggleButton();
 });
 
-// Function to fetch and display recommendations dynamically
+// Enhanced fetchRecommendations with debugging logs
 function fetchRecommendations() {
+    console.log('Fetching recommendations from:', `${API_URL}/api/recommendations`);
     fetch(`${API_URL}/api/recommendations`)
         .then(response => {
+            console.log('Response status:', response.status);
             if (!response.ok) {
                 throw new Error('Failed to fetch recommendations');
             }
             return response.json();
         })
         .then(data => {
+            console.log('Received data:', data);
             if (!Array.isArray(data.recommendations)) {
                 throw new Error('Invalid recommendations format');
             }
             const slidingTab = document.getElementById('sliding-tab');
             slidingTab.innerHTML = '';
             data.recommendations.forEach(song => {
+                console.log('Adding song to UI:', song.title);
                 const songDiv = document.createElement('div');
                 songDiv.className = 'song';
                 songDiv.textContent = song.title;
