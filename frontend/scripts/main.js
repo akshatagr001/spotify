@@ -599,7 +599,7 @@ themeToggleBtn.addEventListener('click', () => {
 
 // Function to fetch and display recommendations dynamically
 function fetchRecommendations() {
-    fetch(`${API_URL}/recommendations`)
+    fetch(`${API_URL}/api/recommendations`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to fetch recommendations');
@@ -607,9 +607,12 @@ function fetchRecommendations() {
             return response.json();
         })
         .then(data => {
+            if (!Array.isArray(data.recommendations)) {
+                throw new Error('Invalid recommendations format');
+            }
             const slidingTab = document.getElementById('sliding-tab');
             slidingTab.innerHTML = '';
-            data.forEach(song => {
+            data.recommendations.forEach(song => {
                 const songDiv = document.createElement('div');
                 songDiv.className = 'song';
                 songDiv.textContent = song.title;
