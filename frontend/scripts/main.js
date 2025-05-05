@@ -597,7 +597,7 @@ themeToggleBtn.addEventListener('click', () => {
     updateThemeToggleButton();
 });
 
-// Enhanced fetchRecommendations with debugging logs
+// Enhanced fetchRecommendations with image support
 function fetchRecommendations() {
     console.log('Fetching recommendations from:', `${API_URL}/api/recommendations`);
     fetch(`${API_URL}/api/recommendations`)
@@ -619,10 +619,26 @@ function fetchRecommendations() {
                 console.log('Adding song to UI:', song.title);
                 const songDiv = document.createElement('div');
                 songDiv.className = 'song';
-                songDiv.textContent = song.title;
+                
+                // Create and append image
+                const img = document.createElement('img');
+                img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
+                img.alt = song.title;
+                songDiv.appendChild(img);
+                
+                // Add song title
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = song.title;
+                songDiv.appendChild(titleSpan);
+                
+                // Add click handler to play the song
                 songDiv.addEventListener('click', () => {
-                    alert(`Playing: ${song.title}`); // Example action on click
+                    const songIndex = allSongs.findIndex(s => s.name === song.name);
+                    if (songIndex !== -1) {
+                        playSong(songIndex);
+                    }
                 });
+                
                 slidingTab.appendChild(songDiv);
             });
         })

@@ -605,19 +605,38 @@ body.light-theme #search-btn {
 }
 
 .recommended-songs .song {
-    display: inline-block;
-    padding: 10px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
     background-color: #282828;
     color: white;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
     transition: transform 0.2s ease, background-color 0.3s ease;
+    min-width: 150px;
+}
+
+.recommended-songs .song img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.recommended-songs .song span {
+    text-align: center;
+    font-size: 14px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .recommended-songs .song:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
     background-color: #1DB954;
-    color: white;
 }
 
 .recommended-songs button {

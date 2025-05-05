@@ -173,12 +173,31 @@ def get_recommendations():
 @app.get("/api/recommendations")
 def get_recommendations():
     try:
-        # Example static recommendations; replace with dynamic logic
-        recommendations = [
-            {"title": "Song 1"},
-            {"title": "Song 2"},
-            {"title": "Song 3"},
-        ]
+        # Get all available songs
+        songs = [song for song in os.listdir(SONGS_FOLDER) if song.endswith((".mp3", ".m4a"))]
+        if not songs:
+            return {"recommendations": []}
+
+        # Randomly select up to 5 songs
+        import random
+        num_recommendations = min(5, len(songs))
+        recommended_songs = random.sample(songs, num_recommendations)
+
+        # Get song data including images
+        recommendations = []
+        images = {os.path.splitext(image)[0].upper(): image 
+                 for image in os.listdir(IMAGES_FOLDER) 
+                 if image.lower().endswith((".jpg", ".jpeg", ".png"))}
+
+        for song in recommended_songs:
+            song_name = os.path.splitext(song)[0].upper()
+            image = images.get(song_name, "default.jpg")
+            recommendations.append({
+                "title": song_name,
+                "name": song,
+                "image": image
+            })
+
         return {"recommendations": recommendations}
     except Exception as e:
         logger.error(f"Error fetching recommendations: {e}")
