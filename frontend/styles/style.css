@@ -594,12 +594,14 @@ body.light-theme #search-btn {
     white-space: nowrap;
     background-color: #f0f0f0;
     padding: 10px;
+    position: relative;
 }
 
 .recommended-songs .sliding-tab {
     display: flex;
     gap: 10px;
-    animation: slide 10s linear infinite;
+    overflow-x: auto;
+    scroll-behavior: smooth;
 }
 
 .recommended-songs .song {
@@ -610,9 +612,24 @@ body.light-theme #search-btn {
     cursor: pointer;
 }
 
-@keyframes slide {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
+.recommended-songs button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.recommended-songs #slide-left {
+    left: 0;
+}
+
+.recommended-songs #slide-right {
+    right: 0;
 }
 
 /* Dark theme styles */
@@ -628,4 +645,15 @@ body.dark-theme .recommended-songs {
 body.dark-theme .recommended-songs .song {
     background-color: #555;
     color: white;
+}
+
+/* Adjust controls for dark and light themes */
+body.dark-theme .controls button {
+    background-color: black;
+    color: white;
+}
+
+body.light-theme .controls button {
+    background-color: white;
+    color: black;
 }

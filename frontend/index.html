@@ -78,12 +78,11 @@
 
     <div class="recommended-songs">
         <h3>Recommended Songs</h3>
-        <div class="sliding-tab">
-            <div class="song" id="recommended-song-1">Song 1</div>
-            <div class="song" id="recommended-song-2">Song 2</div>
-            <div class="song" id="recommended-song-3">Song 3</div>
-            <!-- Add more recommended songs dynamically -->
+        <div class="sliding-tab" id="sliding-tab">
+            <!-- Songs will be dynamically added here -->
         </div>
+        <button id="slide-left">&#9664;</button>
+        <button id="slide-right">&#9654;</button>
     </div>
 
     <!-- Add a theme toggle button -->
@@ -93,9 +92,47 @@
     <script src="scripts/main.js"></script>
     <script>
         // JavaScript for sliding tab and theme toggle
+        const slidingTab = document.getElementById('sliding-tab');
+        const slideLeft = document.getElementById('slide-left');
+        const slideRight = document.getElementById('slide-right');
+
+        slideLeft.addEventListener('click', () => {
+            slidingTab.scrollBy({ left: -200, behavior: 'smooth' });
+        });
+
+        slideRight.addEventListener('click', () => {
+            slidingTab.scrollBy({ left: 200, behavior: 'smooth' });
+        });
+
+        function fetchRecommendations() {
+            fetch('/api/recommendations')
+                .then(response => response.json())
+                .then(data => {
+                    slidingTab.innerHTML = '';
+                    data.forEach(song => {
+                        const songDiv = document.createElement('div');
+                        songDiv.className = 'song';
+                        songDiv.textContent = song.title;
+                        slidingTab.appendChild(songDiv);
+                    });
+                });
+        }
+
+        // Fetch recommendations periodically
+        setInterval(fetchRecommendations, 60000); // Update every 60 seconds
+        fetchRecommendations(); // Initial fetch
+
         document.getElementById('theme-toggle').addEventListener('click', () => {
             document.body.classList.toggle('dark-theme');
         });
+
+        // Remove duplicate theme toggle buttons
+        const themeToggleButtons = document.querySelectorAll('#theme-toggle');
+        if (themeToggleButtons.length > 1) {
+            for (let i = 1; i < themeToggleButtons.length; i++) {
+                themeToggleButtons[i].remove();
+            }
+        }
     </script>
 </body>
 </html>
