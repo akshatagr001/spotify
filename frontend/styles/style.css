@@ -66,7 +66,7 @@ h1 {
 
 #song-list button:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 20px rgba(0, 255, 89, 0.3);
     background: #383838;
 }
 
@@ -76,7 +76,7 @@ h1 {
 
 #song-list button.active {
     background: #1DB954;
-    box-shadow: 0 0 20px rgba(29, 185, 84, 0.3);
+    box-shadow: 0 0 20px rgb(0, 255, 89);
 }
 
 #song-list button.active span {
