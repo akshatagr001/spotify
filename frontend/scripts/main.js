@@ -564,7 +564,6 @@ searchInput.addEventListener('input', hideContextMenu);
 // Theme toggle functionality
 const themeToggleBtn = document.createElement('button');
 themeToggleBtn.id = 'theme-toggle';
-themeToggleBtn.textContent = 'Toggle Theme';
 themeToggleBtn.style.position = 'fixed';
 themeToggleBtn.style.top = '10px';
 themeToggleBtn.style.right = '10px';
@@ -576,28 +575,31 @@ themeToggleBtn.style.borderRadius = '5px';
 themeToggleBtn.style.cursor = 'pointer';
 document.body.appendChild(themeToggleBtn);
 
+// Function to dynamically update the theme toggle button text
+function updateThemeToggleButton() {
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    themeToggleBtn.textContent = isDarkTheme ? 'Switch to Light Theme' : 'Switch to Dark Theme';
+}
+
 // Set default theme to dark
 if (!localStorage.getItem('theme')) {
     localStorage.setItem('theme', 'dark');
 }
 
-document.body.classList.toggle('light-theme', localStorage.getItem('theme') === 'light');
+document.body.classList.toggle('dark-theme', localStorage.getItem('theme') === 'dark');
+updateThemeToggleButton();
 
 themeToggleBtn.addEventListener('click', () => {
     const currentTheme = localStorage.getItem('theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('theme', newTheme);
-    document.body.classList.toggle('light-theme', newTheme === 'light');
+    document.body.classList.toggle('dark-theme', newTheme === 'dark');
+    updateThemeToggleButton();
 });
 
-// Add theme toggle functionality
-document.getElementById('theme-toggle').addEventListener('click', () => {
-    document.body.classList.toggle('light-theme');
-});
-
-// Function to fetch and display recommendations
+// Function to fetch and display recommendations dynamically
 function fetchRecommendations() {
-    fetch('/api/recommendations')
+    fetch(`${API_URL}/recommendations`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to fetch recommendations');
@@ -611,6 +613,9 @@ function fetchRecommendations() {
                 const songDiv = document.createElement('div');
                 songDiv.className = 'song';
                 songDiv.textContent = song.title;
+                songDiv.addEventListener('click', () => {
+                    alert(`Playing: ${song.title}`); // Example action on click
+                });
                 slidingTab.appendChild(songDiv);
             });
         })
