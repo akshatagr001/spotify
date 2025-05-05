@@ -4,9 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 import logging
-from models import Playlist
+from models import Playlist, UserActivity
 from database import init_db
 from tortoise.contrib.fastapi import register_tortoise
+from datetime import datetime, timedelta
+import random
+from typing import List, Dict
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -156,46 +160,83 @@ async def delete_playlist(playlist_name: str):
             content={"message": f"Error deleting playlist: {str(e)}"}
         )
 
-@app.get("/recommendations")
-def get_recommendations():
+@app.post("/track-activity/{song_name}")
+async def track_activity(song_name: str):
     try:
-        # Example static recommendations; replace with dynamic logic
-        recommendations = [
-            {"title": "Song 1"},
-            {"title": "Song 2"},
-            {"title": "Song 3"},
-        ]
-        return {"recommendations": recommendations}
+        # Update or create activity record
+        activity = await UserActivity.get_or_none(song_name=song_name)
+        if activity:
+            activity.play_count += 1
+            activity.last_played = datetime.now()
+            await activity.save()
+        else:
+            await UserActivity.create(song_name=song_name)
+        return {"message": "Activity tracked successfully"}
     except Exception as e:
-        logger.error(f"Error fetching recommendations: {e}")
-        return {"recommendations": [], "error": str(e)}
+        logger.error(f"Error tracking activity: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"message": f"Error tracking activity: {str(e)}"}
+        )
 
 @app.get("/api/recommendations")
-def get_recommendations():
+async def get_recommendations():
     try:
         # Get all available songs
         songs = [song for song in os.listdir(SONGS_FOLDER) if song.endswith((".mp3", ".m4a"))]
         if not songs:
             return {"recommendations": []}
 
-        # Randomly select up to 5 songs
-        import random
-        num_recommendations = min(5, len(songs))
-        recommended_songs = random.sample(songs, num_recommendations)
+        # Get user activity data
+        activities = await UserActivity.all()
+        
+        # If we have enough listening history (more than 10 songs), use smart recommendations
+        if len(activities) >= 10:
+            # Sort activities by play count and recency
+            sorted_activities = sorted(
+                activities,
+                key=lambda x: (x.play_count, x.last_played),
+                reverse=True
+            )
+            
+            # Get the most played songs
+            frequent_songs = {activity.song_name for activity in sorted_activities[:6]}
+            
+            # Get songs similar to most played ones (for now, just other songs)
+            remaining_songs = [s for s in songs if s not in frequent_songs]
+            
+            # Mix recommendations: 6 from most played, 4 random for discovery
+            num_frequent = min(6, len(frequent_songs))
+            num_random = min(4, len(remaining_songs))
+            
+            recommended_songs = (
+                list(frequent_songs)[:num_frequent] +
+                random.sample(remaining_songs, num_random)
+            )
+        else:
+            # Not enough history, use random recommendations
+            num_recommendations = min(10, len(songs))
+            recommended_songs = random.sample(songs, num_recommendations)
 
-        # Get song data including images
-        recommendations = []
+        # Get image data for recommendations
         images = {os.path.splitext(image)[0].upper(): image 
                  for image in os.listdir(IMAGES_FOLDER) 
                  if image.lower().endswith((".jpg", ".jpeg", ".png"))}
 
+        recommendations = []
         for song in recommended_songs:
             song_name = os.path.splitext(song)[0].upper()
             image = images.get(song_name, "default.jpg")
+            
+            # Get play count if available
+            activity = await UserActivity.get_or_none(song_name=song)
+            play_count = activity.play_count if activity else 0
+            
             recommendations.append({
                 "title": song_name,
                 "name": song,
-                "image": image
+                "image": image,
+                "play_count": play_count
             })
 
         return {"recommendations": recommendations}

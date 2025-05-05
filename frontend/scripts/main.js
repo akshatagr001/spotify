@@ -237,6 +237,11 @@ function playSong(index) {
     currentIndex = index;
     const song = songList[index];
     
+    // Track user activity
+    fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
+        method: 'POST'
+    }).catch(error => console.error('Error tracking activity:', error));
+    
     // Update UI
     if (currentButton) currentButton.classList.remove('active');
     currentButton = songListDiv.children[index];

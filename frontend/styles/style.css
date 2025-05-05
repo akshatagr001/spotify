@@ -593,18 +593,27 @@ body.light-theme #search-btn {
     overflow: hidden;
     white-space: nowrap;
     background-color: #f0f0f0;
-    padding: 10px;
+    padding: 10px 40px;  /* Increased padding to accommodate scroll buttons */
     position: relative;
+    min-height: 160px;   /* Ensure consistent height */
 }
 
 .recommended-songs .sliding-tab {
     display: flex;
-    gap: 10px;
+    gap: 15px;          /* Increased gap between songs */
     overflow-x: auto;
     scroll-behavior: smooth;
+    padding: 10px 0;
+    -ms-overflow-style: none;  /* Hide scrollbar IE and Edge */
+    scrollbar-width: none;     /* Hide scrollbar Firefox */
+}
+
+.recommended-songs .sliding-tab::-webkit-scrollbar {
+    display: none;  /* Hide scrollbar Chrome, Safari and Opera */
 }
 
 .recommended-songs .song {
+    flex: 0 0 130px;    /* Fixed width for each song card */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -614,49 +623,7 @@ body.light-theme #search-btn {
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.2s ease, background-color 0.3s ease;
-    min-width: 150px;
-}
-
-.recommended-songs .song img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 4px;
-    margin-bottom: 8px;
-}
-
-.recommended-songs .song span {
-    text-align: center;
-    font-size: 14px;
-    max-width: 140px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.recommended-songs .song:hover {
-    transform: scale(1.05);
-    background-color: #1DB954;
-}
-
-.recommended-songs button {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: #333;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    cursor: pointer;
-    z-index: 1;
-}
-
-.recommended-songs #slide-left {
-    left: 0;
-}
-
-.recommended-songs #slide-right {
-    right: 0;
+    max-width: 130px;
 }
 
 /* Dark theme styles */
