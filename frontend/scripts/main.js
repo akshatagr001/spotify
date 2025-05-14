@@ -726,3 +726,110 @@ function fetchRecommendations() {
 // Fetch recommendations periodically
 setInterval(fetchRecommendations, 60000); // Update every 60 seconds
 fetchRecommendations(); // Initial fetch
+
+// Password modal logic
+(function() {
+    // Create modal elements
+    const modal = document.createElement('div');
+    modal.id = 'password-modal';
+    modal.style.position = 'fixed';
+    modal.style.top = 0;
+    modal.style.left = 0;
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.background = 'rgba(0,0,0,0.85)';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = 9999;
+
+    const box = document.createElement('div');
+    box.style.background = '#181818';
+    box.style.padding = '2rem';
+    box.style.borderRadius = '10px';
+    box.style.boxShadow = '0 2px 16px #000';
+    box.style.display = 'flex';
+    box.style.flexDirection = 'column';
+    box.style.alignItems = 'center';
+
+    const label = document.createElement('label');
+    label.textContent = 'Enter Password:';
+    label.style.color = '#fff';
+    label.style.marginBottom = '1rem';
+
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.style.padding = '0.5rem';
+    input.style.fontSize = '1rem';
+    input.style.marginBottom = '1rem';
+    input.style.borderRadius = '5px';
+    input.style.border = '1px solid #333';
+    input.autofocus = true;
+
+    const error = document.createElement('div');
+    error.style.color = '#ff4d4d';
+    error.style.height = '1.5em';
+    error.style.marginBottom = '1rem';
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Enter';
+    btn.style.padding = '0.5rem 2rem';
+    btn.style.fontSize = '1rem';
+    btn.style.background = '#1db954';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '5px';
+    btn.style.cursor = 'pointer';
+
+    box.appendChild(label);
+    box.appendChild(input);
+    box.appendChild(error);
+    box.appendChild(btn);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+
+    // Prevent tabbing out of modal
+    input.focus();
+    modal.tabIndex = -1;
+    modal.focus();
+
+    // Block scrolling
+    document.body.style.overflow = 'hidden';
+
+    // Password check (change 'letmein' to your desired password)
+    const CORRECT_PASSWORD = 'letmein';
+
+    function unlock() {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+
+    function checkPassword() {
+        if (input.value === CORRECT_PASSWORD) {
+            unlock();
+        } else {
+            error.textContent = 'Incorrect password!';
+            input.value = '';
+            input.focus();
+        }
+    }
+
+    btn.onclick = checkPassword;
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') checkPassword();
+    });
+
+    // Prevent interaction with the rest of the app
+    window.addEventListener('click', function(e) {
+        if (!modal.contains(e.target)) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+    }, true);
+    window.addEventListener('keydown', function(e) {
+        if (!modal.contains(document.activeElement)) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+    }, true);
+})();
