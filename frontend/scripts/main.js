@@ -14,12 +14,23 @@ const searchInput = document.getElementById('search-input');
 const searchBtn = document.getElementById('search-btn');
 
 // Progress bar interaction
+let isDragging = false;
+
 progressBar.addEventListener('input', (e) => {
+    const time = (progressBar.value / 100) * audioPlayer.duration;
+    // Update the current time display immediately while dragging
+    const currentMinutes = Math.floor(time / 60);
+    const currentSeconds = Math.floor(time % 60);
+    currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+});
+
+progressBar.addEventListener('change', (e) => {
     const time = (progressBar.value / 100) * audioPlayer.duration;
     audioPlayer.currentTime = time;
 });
 
 progressBar.addEventListener('mousedown', () => {
+    isDragging = true;
     // Store the current playing state
     window.wasPlaying = !audioPlayer.paused;
     if (window.wasPlaying) {
@@ -28,9 +39,22 @@ progressBar.addEventListener('mousedown', () => {
 });
 
 progressBar.addEventListener('mouseup', () => {
+    isDragging = false;
     // Restore the playing state
     if (window.wasPlaying) {
         audioPlayer.play();
+        window.wasPlaying = false;
+    }
+});
+
+// Handle cases where mouse is released outside the progress bar
+document.addEventListener('mouseup', () => {
+    if (isDragging) {
+        isDragging = false;
+        if (window.wasPlaying) {
+            audioPlayer.play();
+            window.wasPlaying = false;
+        }
     }
 });
 
@@ -81,25 +105,7 @@ let currentIndex = 0;
 let currentButton = null;
 let shuffleMode = false;
 
-// Progress bar interaction
-progressBar.addEventListener('click', (e) => {
-    const progressBarRect = progressBar.getBoundingClientRect();
-    const clickPosition = e.clientX - progressBarRect.left;
-    const clickPercentage = clickPosition / progressBarRect.width;
-    const newTime = clickPercentage * audioPlayer.duration;
-    audioPlayer.currentTime = newTime;
-    progressBar.value = (newTime / audioPlayer.duration) * 100;
-});
-
-progressBar.addEventListener('mousedown', () => {
-    audioPlayer.pause();
-});
-
-progressBar.addEventListener('mouseup', () => {
-    if (playPauseBtn.querySelector('i').classList.contains('fa-pause')) {
-        audioPlayer.play();
-    }
-});
+// Network configuration
 
 // Update progress bar as song plays
 audioPlayer.addEventListener('timeupdate', () => {
