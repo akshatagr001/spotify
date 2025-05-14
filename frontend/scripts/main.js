@@ -94,17 +94,11 @@ audioPlayer.addEventListener('timeupdate', () => {
         const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
         progressBar.value = progress;
         progressBar.style.setProperty('--value', `${progress}%`);
-        
         // Update current time display
-        const currentMinutes = Math.floor(audioPlayer.currentTime / 60);
-        const currentSeconds = Math.floor(audioPlayer.currentTime % 60);
-        currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
-        
+        currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
         // Update duration display if not already set
         if (durationEl.textContent === '0:00') {
-            const durationMinutes = Math.floor(audioPlayer.duration / 60);
-            const durationSeconds = Math.floor(audioPlayer.duration % 60);
-            durationEl.textContent = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+            durationEl.textContent = formatTime(audioPlayer.duration);
         }
     }
 });
