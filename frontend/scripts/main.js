@@ -13,6 +13,55 @@ const nowPlayingTitle = document.getElementById('now-playing-title');
 const searchInput = document.getElementById('search-input');
 const searchBtn = document.getElementById('search-btn');
 
+// Progress bar interaction
+progressBar.addEventListener('input', (e) => {
+    const time = (progressBar.value / 100) * audioPlayer.duration;
+    audioPlayer.currentTime = time;
+});
+
+progressBar.addEventListener('mousedown', () => {
+    // Store the current playing state
+    window.wasPlaying = !audioPlayer.paused;
+    if (window.wasPlaying) {
+        audioPlayer.pause();
+    }
+});
+
+progressBar.addEventListener('mouseup', () => {
+    // Restore the playing state
+    if (window.wasPlaying) {
+        audioPlayer.play();
+    }
+});
+
+// Update progress bar and time displays
+audioPlayer.addEventListener('timeupdate', () => {
+    if (!isNaN(audioPlayer.duration)) {
+        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        progressBar.value = progress;
+        progressBar.style.setProperty('--value', `${progress}%`);
+        
+        // Update current time display
+        const currentMinutes = Math.floor(audioPlayer.currentTime / 60);
+        const currentSeconds = Math.floor(audioPlayer.currentTime % 60);
+        currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+        
+        // Update duration display if not already set
+        if (durationEl.textContent === '0:00') {
+            const durationMinutes = Math.floor(audioPlayer.duration / 60);
+            const durationSeconds = Math.floor(audioPlayer.duration % 60);
+            durationEl.textContent = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+        }
+    }
+});
+
+// Update duration when metadata is loaded
+audioPlayer.addEventListener('loadedmetadata', () => {
+    const durationMinutes = Math.floor(audioPlayer.duration / 60);
+    const durationSeconds = Math.floor(audioPlayer.duration % 60);
+    durationEl.textContent = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+});
+
 // Add playlist-related DOM elements
 const createPlaylistBtn = document.getElementById('create-playlist-btn');
 const playlistSelect = document.getElementById('playlist-select');
@@ -31,6 +80,44 @@ let songList = []; // Add this line to declare songList
 let currentIndex = 0;
 let currentButton = null;
 let shuffleMode = false;
+
+// Progress bar interaction
+progressBar.addEventListener('click', (e) => {
+    const progressBarRect = progressBar.getBoundingClientRect();
+    const clickPosition = e.clientX - progressBarRect.left;
+    const clickPercentage = clickPosition / progressBarRect.width;
+    const newTime = clickPercentage * audioPlayer.duration;
+    audioPlayer.currentTime = newTime;
+    progressBar.value = (newTime / audioPlayer.duration) * 100;
+});
+
+progressBar.addEventListener('mousedown', () => {
+    audioPlayer.pause();
+});
+
+progressBar.addEventListener('mouseup', () => {
+    if (playPauseBtn.querySelector('i').classList.contains('fa-pause')) {
+        audioPlayer.play();
+    }
+});
+
+// Update progress bar as song plays
+audioPlayer.addEventListener('timeupdate', () => {
+    if (!isNaN(audioPlayer.duration)) {
+        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        progressBar.value = progress;
+        
+        // Update current time display
+        const currentMinutes = Math.floor(audioPlayer.currentTime / 60);
+        const currentSeconds = Math.floor(audioPlayer.currentTime % 60);
+        currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+        
+        // Update duration display
+        const durationMinutes = Math.floor(audioPlayer.duration / 60);
+        const durationSeconds = Math.floor(audioPlayer.duration % 60);
+        durationEl.textContent = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+    }
+});
 
 // Playlist management
 let playlists = {};
@@ -565,6 +652,23 @@ async function removeSongFromPlaylist(playlistName, song) {
 // Hide context menu when switching views
 playlistSelect.addEventListener('change', hideContextMenu);
 searchInput.addEventListener('input', hideContextMenu);
+
+// Hamburger Menu functionality
+document.addEventListener('DOMContentLoaded', () => {
+    const hamburgerMenu = document.querySelector('.hamburger-menu');
+    const menuLines = document.querySelector('.menu-lines');
+
+    menuLines.addEventListener('click', () => {
+        hamburgerMenu.classList.toggle('active');
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!hamburgerMenu.contains(e.target) && hamburgerMenu.classList.contains('active')) {
+            hamburgerMenu.classList.remove('active');
+        }
+    });
+});
 
 // // Theme toggle functionality
 // const themeToggleBtn = document.createElement('button');

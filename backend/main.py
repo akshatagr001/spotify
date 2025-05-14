@@ -244,6 +244,20 @@ async def get_recommendations():
         logger.error(f"Error fetching recommendations: {e}")
         return {"recommendations": [], "error": str(e)}
 
+@app.get("/download/setup")
+async def download_setup():
+    setup_file = "./Spotify Clone Setup 1.0.0.exe"
+    if os.path.exists(setup_file):
+        return FileResponse(
+            path=setup_file,
+            filename="Spotify Clone Setup 1.0.0.exe",
+            media_type="application/octet-stream"
+        )
+    return JSONResponse(
+        status_code=404,
+        content={"error": "Setup file not found"}
+    )
+
 # Initialize Tortoise ORM
 register_tortoise(
     app,

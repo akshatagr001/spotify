@@ -727,3 +727,73 @@ body.dark-theme #theme-toggle {
     background-color: white;
     color: black;
 }
+
+/* Hamburger Menu */
+.hamburger-menu {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+}
+
+.menu-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    padding: 10px;
+}
+
+.menu-lines span {
+    display: block;
+    width: 30px;
+    height: 3px;
+    background-color: #1DB954;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.menu-content {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: rgba(24, 24, 24, 0.98);
+    padding: 15px;
+    border-radius: 8px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    opacity: 0;
+}
+
+.hamburger-menu.active .menu-content {
+    max-height: 200px;
+    opacity: 1;
+    padding: 15px;
+}
+
+.hamburger-menu.active .menu-lines span:first-child {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.hamburger-menu.active .menu-lines span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-menu.active .menu-lines span:last-child {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+.download-link {
+    color: #1DB954;
+    text-decoration: none;
+    font-size: 16px;
+    display: block;
+    padding: 8px 15px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.download-link:hover {
+    background-color: rgba(29, 185, 84, 0.1);
+}
