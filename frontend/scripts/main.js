@@ -39,11 +39,10 @@ progressBar.addEventListener('mousemove', (e) => {
         const percentage = Math.min(Math.max(x / bounds.width, 0), 1);
         progressBar.value = percentage * 100;
         const time = percentage * audioPlayer.duration;
+        // Only update the time display, not audioPlayer.currentTime
         const currentMinutes = Math.floor(time / 60);
         const currentSeconds = Math.floor(time % 60);
         currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
-        // Update audio currentTime in real-time while dragging
-        audioPlayer.currentTime = time;
     }
 });
 
@@ -65,7 +64,6 @@ progressBar.addEventListener('mouseup', (e) => {
 document.addEventListener('mouseup', (e) => {
     if (isDragging) {
         isDragging = false;
-        // Calculate position relative to progress bar if mouse is over it
         const bounds = progressBar.getBoundingClientRect();
         let percentage;
         if (
@@ -77,7 +75,6 @@ document.addEventListener('mouseup', (e) => {
             const x = e.clientX - bounds.left;
             percentage = Math.min(Math.max(x / bounds.width, 0), 1);
         } else {
-            // If released outside, keep the current progressBar value
             percentage = progressBar.value / 100;
         }
         audioPlayer.currentTime = percentage * audioPlayer.duration;
@@ -416,12 +413,6 @@ audioPlayer.addEventListener('timeupdate', () => {
         currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
         durationEl.textContent = formatTime(audioPlayer.duration);
     }
-});
-
-// Seek through progress bar
-progressBar.addEventListener('input', () => {
-    const time = (progressBar.value / 100) * audioPlayer.duration;
-    audioPlayer.currentTime = time;
 });
 
 // Format seconds into MM:SS
