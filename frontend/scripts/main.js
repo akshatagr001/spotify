@@ -15,46 +15,76 @@ const searchBtn = document.getElementById('search-btn');
 
 // Progress bar interaction
 let isDragging = false;
+let wasPlaying = false;
 
-progressBar.addEventListener('input', (e) => {
-    const time = (progressBar.value / 100) * audioPlayer.duration;
-    // Update the current time display immediately while dragging
-    const currentMinutes = Math.floor(time / 60);
-    const currentSeconds = Math.floor(time % 60);
-    currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+progressBar.addEventListener('click', (e) => {
+    const bounds = progressBar.getBoundingClientRect();
+    const x = e.clientX - bounds.left;
+    const percentage = x / bounds.width;
+    audioPlayer.currentTime = percentage * audioPlayer.duration;
 });
 
-progressBar.addEventListener('change', (e) => {
-    const time = (progressBar.value / 100) * audioPlayer.duration;
-    audioPlayer.currentTime = time;
-});
-
-progressBar.addEventListener('mousedown', () => {
+progressBar.addEventListener('mousedown', (e) => {
     isDragging = true;
-    // Store the current playing state
-    window.wasPlaying = !audioPlayer.paused;
-    if (window.wasPlaying) {
+    wasPlaying = !audioPlayer.paused;
+    if (wasPlaying) {
         audioPlayer.pause();
     }
 });
 
-progressBar.addEventListener('mouseup', () => {
-    isDragging = false;
-    // Restore the playing state
-    if (window.wasPlaying) {
-        audioPlayer.play();
-        window.wasPlaying = false;
+progressBar.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        const bounds = progressBar.getBoundingClientRect();
+        const x = e.clientX - bounds.left;
+        const percentage = Math.min(Math.max(x / bounds.width, 0), 1);
+        progressBar.value = percentage * 100;
+        const time = percentage * audioPlayer.duration;
+        const currentMinutes = Math.floor(time / 60);
+        const currentSeconds = Math.floor(time % 60);
+        currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+        // Update audio currentTime in real-time while dragging
+        audioPlayer.currentTime = time;
+    }
+});
+
+progressBar.addEventListener('mouseup', (e) => {
+    if (isDragging) {
+        isDragging = false;
+        const bounds = progressBar.getBoundingClientRect();
+        const x = e.clientX - bounds.left;
+        const percentage = Math.min(Math.max(x / bounds.width, 0), 1);
+        audioPlayer.currentTime = percentage * audioPlayer.duration;
+        if (wasPlaying) {
+            audioPlayer.play();
+        }
+        wasPlaying = false;
     }
 });
 
 // Handle cases where mouse is released outside the progress bar
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', (e) => {
     if (isDragging) {
         isDragging = false;
-        if (window.wasPlaying) {
-            audioPlayer.play();
-            window.wasPlaying = false;
+        // Calculate position relative to progress bar if mouse is over it
+        const bounds = progressBar.getBoundingClientRect();
+        let percentage;
+        if (
+            e.clientX >= bounds.left &&
+            e.clientX <= bounds.right &&
+            e.clientY >= bounds.top &&
+            e.clientY <= bounds.bottom
+        ) {
+            const x = e.clientX - bounds.left;
+            percentage = Math.min(Math.max(x / bounds.width, 0), 1);
+        } else {
+            // If released outside, keep the current progressBar value
+            percentage = progressBar.value / 100;
         }
+        audioPlayer.currentTime = percentage * audioPlayer.duration;
+        if (wasPlaying) {
+            audioPlayer.play();
+        }
+        wasPlaying = false;
     }
 });
 
@@ -106,24 +136,6 @@ let currentButton = null;
 let shuffleMode = false;
 
 // Network configuration
-
-// Update progress bar as song plays
-audioPlayer.addEventListener('timeupdate', () => {
-    if (!isNaN(audioPlayer.duration)) {
-        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        progressBar.value = progress;
-        
-        // Update current time display
-        const currentMinutes = Math.floor(audioPlayer.currentTime / 60);
-        const currentSeconds = Math.floor(audioPlayer.currentTime % 60);
-        currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
-        
-        // Update duration display
-        const durationMinutes = Math.floor(audioPlayer.duration / 60);
-        const durationSeconds = Math.floor(audioPlayer.duration % 60);
-        durationEl.textContent = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
-    }
-});
 
 // Playlist management
 let playlists = {};
