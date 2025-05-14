@@ -670,43 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// // Theme toggle functionality
-// const themeToggleBtn = document.createElement('button');
-// themeToggleBtn.id = 'theme-toggle';
-// themeToggleBtn.style.position = 'fixed';
-// themeToggleBtn.style.top = '10px';
-// themeToggleBtn.style.right = '10px';
-// themeToggleBtn.style.padding = '10px';
-// themeToggleBtn.style.backgroundColor = '#1DB954';
-// themeToggleBtn.style.color = 'white';
-// themeToggleBtn.style.border = 'none';
-// themeToggleBtn.style.borderRadius = '5px';
-// themeToggleBtn.style.cursor = 'pointer';
-// document.body.appendChild(themeToggleBtn);
 
-// // Function to dynamically update the theme toggle button text
-// function updateThemeToggleButton() {
-//     const isDarkTheme = document.body.classList.contains('dark-theme');
-//     themeToggleBtn.textContent = isDarkTheme ? 'Switch to Light Theme' : 'Switch to Dark Theme';
-// }
-
-// // Set default theme to dark
-// if (!localStorage.getItem('theme')) {
-//     localStorage.setItem('theme', 'dark');
-// }
-
-// document.body.classList.toggle('dark-theme', localStorage.getItem('theme') === 'dark');
-// updateThemeToggleButton();
-
-// themeToggleBtn.addEventListener('click', () => {
-//     const currentTheme = localStorage.getItem('theme');
-//     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-//     localStorage.setItem('theme', newTheme);
-//     document.body.classList.toggle('dark-theme', newTheme === 'dark');
-//     updateThemeToggleButton();
-// });
-
-// Enhanced fetchRecommendations with image support
 function fetchRecommendations() {
     console.log('Fetching recommendations from:', `${API_URL}/api/recommendations`);
     fetch(`${API_URL}/api/recommendations`)
