@@ -246,11 +246,11 @@ async def get_recommendations():
 
 @app.get("/download/setup")
 async def download_setup():
-    setup_file = "./Spotify Clone Setup 1.0.0.rar"
+    setup_file = "./Spotify Clone Setup 1.0.0.zip"
     if os.path.exists(setup_file):
         return FileResponse(
             path=setup_file,
-            filename="Spotify Clone Setup 1.0.0.rar",
+            filename="Spotify Clone Setup 1.0.0.zip",
             media_type="application/octet-stream"
         )
     return JSONResponse(
