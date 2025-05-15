@@ -31,9 +31,6 @@
             <select id="playlist-select" title="Select Playlist">
                 <option value="">All Songs</option>
             </select>
-            <button id="recently-played-btn" title="Show Recently Played">
-                <i class="fas fa-history"></i> Recently Played
-            </button>
         </div>
     </div>
 
@@ -51,15 +48,6 @@
                 <div id="playlist-song-list"></div>
             </div>
             <button id="save-playlist">Save Playlist</button>
-        </div>
-    </div>
-
-    <!-- Recently Played Modal -->
-    <div id="recently-played-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="close-recently-played">&times;</span>
-            <h2>Recently Played Songs</h2>
-            <div id="recently-played-list"></div>
         </div>
     </div>
 
@@ -81,7 +69,6 @@
                 <button id="play-pause"><i class="fas fa-play"></i></button>
                 <button id="next-track"><i class="fas fa-forward"></i></button>
                 <button id="shuffle"><i class="fas fa-random"></i></button>
-                <button id="repeat-btn" title="Repeat Mode"><i class="fas fa-redo"></i></button>
             </div>
             <div class="progress-container">
                 <span id="current-time">0:00</span>
@@ -95,16 +82,6 @@
                 <i class="fas fa-volume-up"></i>
                 <input type="range" id="volume-control" value="100" min="0" max="100">
             </div>
-            <button id="queue-btn" title="Show Queue"><i class="fas fa-list"></i></button>
-        </div>
-    </div>
-
-    <!-- Queue Modal -->
-    <div id="queue-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="close-queue-modal">&times;</span>
-            <h2>Play Queue</h2>
-            <div id="queue-list"></div>
         </div>
     </div>
 
@@ -116,6 +93,9 @@
         <button id="slide-left">&#9664;</button>
         <button id="slide-right">&#9654;</button>
     </div>
+
+    <!-- Add a theme toggle button -->
+    
 
     <audio id="audio-player"></audio>
     <script src="scripts/main.js"></script>
@@ -132,6 +112,19 @@
         slideRight.addEventListener('click', () => {
             slidingTab.scrollBy({ left: 200, behavior: 'smooth' });
         });
+
+        // Theme toggle functionality
+        // document.getElementById('theme-toggle').addEventListener('click', () => {
+        //     document.body.classList.toggle('dark-theme');
+        // });
+
+        // Remove duplicate theme toggle buttons
+        // const themeToggleButtons = document.querySelectorAll('#theme-toggle');
+        // if (themeToggleButtons.length > 1) {
+        //     for (let i = 1; i < themeToggleButtons.length; i++) {
+        //         themeToggleButtons[i].remove();
+        //     }
+        // }
     </script>
 </body>
 </html>

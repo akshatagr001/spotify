@@ -428,251 +428,228 @@ audioPlayer.addEventListener('ended', () => {
 });
 
 function playNextSong() {
-    if (playQueue.length > 0 && queueIndex !== -1) {
-        if (repeatMode === 2) {
-            // Repeat one
-            playFromQueue();
-        } else if (queueIndex < playQueue.length - 1) {
-            queueIndex++;
-            playFromQueue();
-        } else if (repeatMode === 1) {
-            queueIndex = 0;
-            playFromQueue();
-        } else {
-            queueIndex = -1;
-            // Optionally, stop playback or play from songList
-        }
-    } else if (shuffleMode) {
+    if (shuffleMode) {
         let newIndex;
         do {
             newIndex = Math.floor(Math.random() * songList.length);
         } while (newIndex === currentIndex && songList.length > 1);
         playSong(newIndex);
-    } else if (repeatMode === 2) {
-        playSong(currentIndex);
-    } else if (currentIndex < songList.length - 1) {
-        playSong(currentIndex + 1);
-    } else if (repeatMode === 1) {
-        playSong(0);
+    } else {
+        playSong((currentIndex + 1) % songList.length);
     }
 }
 
-// Previous track logic for queue
-prevTrackBtn.addEventListener('click', () => {
-    if (playQueue.length > 0 && queueIndex > 0) {
-        queueIndex--;
-        playFromQueue();
-    } else if (currentIndex > 0) {
-        playSong(currentIndex - 1);
+// Handle playlist selection
+playlistSelect.onchange = () => {
+    const selectedPlaylist = playlistSelect.value;
+    if (selectedPlaylist === '') {
+        songList = allSongs;
     } else {
-        playSong(songList.length - 1);
+        songList = playlists[selectedPlaylist] || [];
+    }
+    currentPlaylist = selectedPlaylist;
+    renderSongList();
+};
+
+// Keyboard controls
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && e.target === document.body) {
+        e.preventDefault();
+        playPauseBtn.click();
+    } else if (e.code === 'ArrowLeft') {
+        prevTrackBtn.click();
+    } else if (e.code === 'ArrowRight') {
+        nextTrackBtn.click();
+    } else if (e.code === 'KeyF' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        searchInput.focus();
+    } else if (e.code === 'KeyY' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        searchBtn.click();
     }
 });
 
-// When playing a song directly, reset queueIndex
-function playSong(index) {
-    currentIndex = index;
-    queueIndex = -1;
-    const song = songList[index];
-    
-    // Track user activity
-    fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
-        method: 'POST'
-    }).catch(error => console.error('Error tracking activity:', error));
-    
-    // Update UI
-    if (currentButton) currentButton.classList.remove('active');
-    currentButton = songListDiv.children[index];
-    currentButton.classList.add('active');
-    
-    // Update now playing info with network URLs
-    nowPlayingImg.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
-    nowPlayingTitle.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
-    
-    // Update audio source with network URL
-    audioPlayer.src = `${API_URL}/stream/${song.name}`;
-    audioPlayer.play()
-        .then(() => {
-            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-        })
-        .catch(error => console.error('Error playing audio:', error));
-}
+// Add context menu-related variables
+let contextMenu = null;
+let currentContextSong = null;
 
-// Repeat Modes
-const repeatBtn = document.getElementById('repeat-btn');
-let repeatMode = 0; // 0: no repeat, 1: repeat all, 2: repeat one
-const repeatIcons = [
-    '<i class="fas fa-redo"></i>',         // no repeat (gray)
-    '<i class="fas fa-redo-alt"></i>',     // repeat all (green)
-    '<i class="fas fa-redo"></i><span style="font-size:10px;vertical-align:super;">1</span>' // repeat one
-];
-repeatBtn.onclick = () => {
-    repeatMode = (repeatMode + 1) % 3;
-    updateRepeatBtn();
-};
-function updateRepeatBtn() {
-    repeatBtn.innerHTML = repeatIcons[repeatMode];
-    if (repeatMode === 1 || repeatMode === 2) {
-        repeatBtn.classList.add('active');
-    } else {
-        repeatBtn.classList.remove('active');
+function showContextMenu(e, song) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Hide existing menu if any
+    if (contextMenu) {
+        document.body.removeChild(contextMenu);
     }
-}
-updateRepeatBtn();
-
-// Play Queue Management
-const queueBtn = document.getElementById('queue-btn');
-const queueModal = document.getElementById('queue-modal');
-const closeQueueModal = document.getElementById('close-queue-modal');
-const queueListDiv = document.getElementById('queue-list');
-let playQueue = [];
-let queueIndex = -1;
-
-function updateQueueUI() {
-    queueListDiv.innerHTML = '';
-    if (playQueue.length === 0) {
-        queueListDiv.innerHTML = '<p style="color:#b3b3b3;">Queue is empty.</p>';
-        return;
-    }
-    playQueue.forEach((song, idx) => {
-        const div = document.createElement('div');
-        div.className = 'queue-song';
-        const img = document.createElement('img');
-        img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
-        img.alt = song.name;
-        const span = document.createElement('span');
-        span.textContent = song.name.replace(/\.(mp3|m4a)$/,'')
-        div.appendChild(img);
-        div.appendChild(span);
-
-        // Remove from queue button
-        const removeBtn = document.createElement('span');
-        removeBtn.className = 'remove-queue';
-        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-        removeBtn.onclick = (e) => {
-            e.stopPropagation();
-            playQueue.splice(idx, 1);
-            updateQueueUI();
-        };
-        div.appendChild(removeBtn);
-
-        div.onclick = () => {
-            queueIndex = idx;
-            playFromQueue();
-            queueModal.style.display = 'none';
-        };
-        queueListDiv.appendChild(div);
-    });
-}
-
-queueBtn.onclick = () => {
-    updateQueueUI();
-    queueModal.style.display = 'block';
-};
-closeQueueModal.onclick = () => {
-    queueModal.style.display = 'none';
-};
-window.addEventListener('click', (event) => {
-    if (event.target === queueModal) {
-        queueModal.style.display = 'none';
-    }
-});
-
-// Add to queue from context menu
-// Add this to showContextMenu after other menu items:
-    // ...
-    // Add "Add to Queue" option
-    const addToQueueItem = document.createElement('div');
-    addToQueueItem.className = 'context-menu-item';
-    addToQueueItem.innerHTML = '<i class="fas fa-list"></i>Add to Queue';
-    addToQueueItem.onclick = () => {
-        playQueue.push(song);
+    
+    currentContextSong = song;
+    
+    // Create new menu
+    contextMenu = document.createElement('div');
+    contextMenu.className = 'context-menu';
+    
+    // Calculate position
+    const clickX = e.clientX;
+    const clickY = e.clientY;
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    
+    // Add menu items
+    const addToPlaylistItem = document.createElement('div');
+    addToPlaylistItem.className = 'context-menu-item has-submenu';
+    addToPlaylistItem.innerHTML = '<i class="fas fa-plus"></i>Add to Playlist<i class="fas fa-chevron-right submenu-arrow"></i>';
+    
+    const submenu = document.createElement('div');
+    submenu.className = 'context-submenu';
+    
+    // New playlist option
+    const newPlaylistItem = document.createElement('div');
+    newPlaylistItem.className = 'context-menu-item';
+    newPlaylistItem.innerHTML = '<i class="fas fa-music"></i>Create New Playlist';
+    newPlaylistItem.onclick = () => {
         hideContextMenu();
-        alert(`Added "${song.name.replace(/\.(mp3|m4a)$/,'')}" to queue`);
+        playlistModal.style.display = 'block';
+        updatePlaylistSongList();
+        // Pre-select the current song
+        const checkbox = Array.from(playlistSongList.querySelectorAll('input[type="checkbox"]'))
+            .find(cb => cb.value === currentContextSong.name);
+        if (checkbox) checkbox.checked = true;
     };
-    contextMenu.appendChild(addToQueueItem);
-// ...existing code...
-
-// Play from queue if queueIndex is set
-function playFromQueue() {
-    if (queueIndex >= 0 && queueIndex < playQueue.length) {
-        const song = playQueue[queueIndex];
-        // Find index in allSongs to keep UI in sync
-        const idx = allSongs.findIndex(s => s.name === song.name);
-        if (idx !== -1) playSong(idx);
+    submenu.appendChild(newPlaylistItem);
+    
+    // Add separator if there are playlists
+    if (Object.keys(playlists).length > 0) {
+        const separator = document.createElement('div');
+        separator.className = 'context-menu-separator';
+        submenu.appendChild(separator);
+        
+        // Add existing playlists
+        Object.keys(playlists).forEach(playlistName => {
+            const playlistItem = document.createElement('div');
+            playlistItem.className = 'context-menu-item';
+            playlistItem.innerHTML = `<i class="fas fa-list"></i>${playlistName}`;
+            playlistItem.onclick = () => addSongToPlaylist(playlistName, currentContextSong);
+            submenu.appendChild(playlistItem);
+        });
     }
-}
-
-// Override playNextSong for queue/repeat logic
-function playNextSong() {
-    if (playQueue.length > 0 && queueIndex !== -1) {
-        if (repeatMode === 2) {
-            // Repeat one
-            playFromQueue();
-        } else if (queueIndex < playQueue.length - 1) {
-            queueIndex++;
-            playFromQueue();
-        } else if (repeatMode === 1) {
-            queueIndex = 0;
-            playFromQueue();
-        } else {
-            queueIndex = -1;
-            // Optionally, stop playback or play from songList
+    
+    addToPlaylistItem.appendChild(submenu);
+    contextMenu.appendChild(addToPlaylistItem);
+    
+    // Add "Remove from Playlist" option if in a playlist
+    if (currentPlaylist) {
+        const separator = document.createElement('div');
+        separator.className = 'context-menu-separator';
+        contextMenu.appendChild(separator);
+        
+        const removeItem = document.createElement('div');
+        removeItem.className = 'context-menu-item';
+        removeItem.innerHTML = '<i class="fas fa-minus"></i>Remove from Playlist';
+        removeItem.onclick = () => removeSongFromPlaylist(currentPlaylist, currentContextSong);
+        contextMenu.appendChild(removeItem);
+    }
+    
+    // Add to DOM
+    document.body.appendChild(contextMenu);
+    
+    // Position the menu
+    const menuRect = contextMenu.getBoundingClientRect();
+    let menuX = clickX;
+    let menuY = clickY;
+    
+    if (menuX + menuRect.width > screenW) {
+        menuX = screenW - menuRect.width;
+    }
+    
+    if (menuY + menuRect.height > screenH) {
+        menuY = screenH - menuRect.height;
+    }
+    
+    contextMenu.style.left = menuX + 'px';
+    contextMenu.style.top = menuY + 'px';
+    
+    // Show the menu with animation
+    requestAnimationFrame(() => {
+        contextMenu.classList.add('active');
+    });
+    
+    // Handle clicks outside
+    const closeContextMenu = (e) => {
+        if (!contextMenu.contains(e.target)) {
+            hideContextMenu();
+            document.removeEventListener('click', closeContextMenu);
+            document.removeEventListener('contextmenu', closeContextMenu);
         }
-    } else if (shuffleMode) {
-        let newIndex;
-        do {
-            newIndex = Math.floor(Math.random() * songList.length);
-        } while (newIndex === currentIndex && songList.length > 1);
-        playSong(newIndex);
-    } else if (repeatMode === 2) {
-        playSong(currentIndex);
-    } else if (currentIndex < songList.length - 1) {
-        playSong(currentIndex + 1);
-    } else if (repeatMode === 1) {
-        playSong(0);
+    };
+    
+    document.addEventListener('click', closeContextMenu);
+    document.addEventListener('contextmenu', closeContextMenu);
+}
+
+function hideContextMenu() {
+    if (contextMenu && contextMenu.parentNode) {
+        contextMenu.classList.remove('active');
+        setTimeout(() => {
+            if (contextMenu && contextMenu.parentNode) {
+                contextMenu.parentNode.removeChild(contextMenu);
+                contextMenu = null;
+            }
+        }, 200);
     }
 }
 
-// Previous track logic for queue
-prevTrackBtn.addEventListener('click', () => {
-    if (playQueue.length > 0 && queueIndex > 0) {
-        queueIndex--;
-        playFromQueue();
-    } else if (currentIndex > 0) {
-        playSong(currentIndex - 1);
-    } else {
-        playSong(songList.length - 1);
+// Add song to playlist
+async function addSongToPlaylist(playlistName, song) {
+    const playlist = playlists[playlistName] || [];
+    if (!playlist.find(s => s.name === song.name)) {
+        playlist.push(song);
+        playlists[playlistName] = playlist;
+        
+        try {
+            await fetch(`${API_URL}/playlists/${encodeURIComponent(playlistName)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ songs: playlist })
+            });
+            
+            alert(`Added "${song.name}" to playlist "${playlistName}"`);
+        } catch (error) {
+            console.error('Error updating playlist:', error);
+            alert('Error updating playlist');
+        }
     }
-});
+    hideContextMenu();
+}
 
-// When playing a song directly, reset queueIndex
-function playSong(index) {
-    currentIndex = index;
-    queueIndex = -1;
-    const song = songList[index];
+// Remove song from playlist
+async function removeSongFromPlaylist(playlistName, song) {
+    const playlist = playlists[playlistName] || [];
+    const updatedPlaylist = playlist.filter(s => s.name !== song.name);
+    playlists[playlistName] = updatedPlaylist;
     
-    // Track user activity
-    fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
-        method: 'POST'
-    }).catch(error => console.error('Error tracking activity:', error));
-    
-    // Update UI
-    if (currentButton) currentButton.classList.remove('active');
-    currentButton = songListDiv.children[index];
-    currentButton.classList.add('active');
-    
-    // Update now playing info with network URLs
-    nowPlayingImg.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
-    nowPlayingTitle.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
-    
-    // Update audio source with network URL
-    audioPlayer.src = `${API_URL}/stream/${song.name}`;
-    audioPlayer.play()
-        .then(() => {
-            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-        })
-        .catch(error => console.error('Error playing audio:', error));
+    try {
+        await fetch(`${API_URL}/playlists/${encodeURIComponent(playlistName)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ songs: updatedPlaylist })
+        });
+        
+        // Update display if we're viewing the playlist
+        if (currentPlaylist === playlistName) {
+            songList = updatedPlaylist;
+            renderSongList();
+        }
+        
+        alert(`Removed "${song.name}" from playlist "${playlistName}"`);
+    } catch (error) {
+        console.error('Error updating playlist:', error);
+        alert('Error updating playlist');
+    }
+    hideContextMenu();
 }
 
 // Hide context menu when switching views
@@ -749,70 +726,3 @@ function fetchRecommendations() {
 // Fetch recommendations periodically
 setInterval(fetchRecommendations, 60000); // Update every 60 seconds
 fetchRecommendations(); // Initial fetch
-
-// Recently Played Modal Elements
-const recentlyPlayedBtn = document.getElementById('recently-played-btn');
-const recentlyPlayedModal = document.getElementById('recently-played-modal');
-const closeRecentlyPlayed = document.getElementById('close-recently-played');
-const recentlyPlayedList = document.getElementById('recently-played-list');
-
-// Show Recently Played Modal
-recentlyPlayedBtn.onclick = () => {
-    fetch(`${API_URL}/recently-played`)
-        .then(response => response.json())
-        .then(data => {
-            recentlyPlayedList.innerHTML = '';
-            if (Array.isArray(data.recently_played) && data.recently_played.length > 0) {
-                data.recently_played.forEach(song => {
-                    const div = document.createElement('div');
-                    div.className = 'recently-played-song';
-                    div.style.display = 'flex';
-                    div.style.alignItems = 'center';
-                    div.style.gap = '15px';
-                    div.style.marginBottom = '12px';
-
-                    const img = document.createElement('img');
-                    img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
-                    img.alt = song.name;
-                    img.style.width = '48px';
-                    img.style.height = '48px';
-                    img.style.borderRadius = '6px';
-                    img.style.objectFit = 'cover';
-
-                    const info = document.createElement('div');
-                    info.innerHTML = `<strong>${song.name.replace(/\.(mp3|m4a)$/,'')}</strong><br>
-                        <small>Played: ${song.play_count} times</small><br>
-                        <small>Last Played: ${song.last_played ? new Date(song.last_played).toLocaleString() : '-'}</small>`;
-
-                    div.appendChild(img);
-                    div.appendChild(info);
-
-                    div.addEventListener('click', () => {
-                        // Find index in allSongs and play
-                        const idx = allSongs.findIndex(s => s.name === song.name);
-                        if (idx !== -1) playSong(idx);
-                        recentlyPlayedModal.style.display = 'none';
-                    });
-
-                    recentlyPlayedList.appendChild(div);
-                });
-            } else {
-                recentlyPlayedList.innerHTML = '<p style="color:#b3b3b3;">No recently played songs.</p>';
-            }
-            recentlyPlayedModal.style.display = 'block';
-        })
-        .catch(() => {
-            recentlyPlayedList.innerHTML = '<p style="color:#b3b3b3;">Failed to load recently played songs.</p>';
-            recentlyPlayedModal.style.display = 'block';
-        });
-};
-
-closeRecentlyPlayed.onclick = () => {
-    recentlyPlayedModal.style.display = 'none';
-};
-
-window.addEventListener('click', (event) => {
-    if (event.target === recentlyPlayedModal) {
-        recentlyPlayedModal.style.display = 'none';
-    }
-});
