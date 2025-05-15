@@ -466,8 +466,51 @@ document.addEventListener('keydown', (e) => {
     } else if (e.code === 'KeyY' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         searchBtn.click();
+    } else if (e.code === 'F11') {
+        e.preventDefault();
+        toggleFullScreen();
     }
 });
+
+// Update fullscreen toggle function with better cross-platform support
+function toggleFullScreen() {
+    // Get the main element (document.documentElement for web, window for desktop app)
+    const element = document.documentElement;
+
+    try {
+        if (!isFullscreen()) {
+            // Request fullscreen with fallbacks
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) { // Safari
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { // IE11
+                element.msRequestFullscreen();
+            }
+        } else {
+            // Exit fullscreen with fallbacks
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) { // Safari
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { // IE11
+                document.msExitFullscreen();
+            }
+        }
+    } catch (err) {
+        console.log(`Fullscreen error: ${err.message}`);
+    }
+}
+
+// Helper function to check fullscreen state
+function isFullscreen() {
+    return !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+    );
+}
 
 // Add context menu-related variables
 let contextMenu = null;
