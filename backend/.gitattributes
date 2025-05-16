@@ -3,3 +3,5 @@ backend/Spotify[[:space:]]Clone[[:space:]]Setup[[:space:]]1.0.0.exe filter=lfs d
 backend/Spotify[[:space:]]Clone[[:space:]]Setup[[:space:]]1.0.0.zip filter=lfs diff=lfs merge=lfs -text
 Spotify[[:space:]]Clone[[:space:]]Setup[[:space:]]1.0.0.exe filter=lfs diff=lfs merge=lfs -text
 Spotify[[:space:]]Clone[[:space:]]Setup[[:space:]]1.0.0.zip filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.zip filter=lfs diff=lfs merge=lfs -text
