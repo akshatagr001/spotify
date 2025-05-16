@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Spotify Clone</title>
+    
+    <!-- ✅ SEO Essentials -->
+    <meta name="robots" content="index, follow">
+    <meta name="description" content="Listen to songs, create playlists, and enjoy a Spotify-like experience.">
+    <link rel="canonical" href="https://yourdomain.com/"> <!-- Replace with your actual domain -->
+
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -13,16 +20,18 @@
             <span></span>
             <span></span>
             <span></span>
-        </div>        <div class="menu-content">
+        </div>        
+        <div class="menu-content">
             <a href="https://spotify-backend-6mr0.onrender.com/download/setup" class="download-link">Download App</a>
         </div>
     </div>
+
     <h1>🎵 My Spotify Clone 🎵</h1>
+
     <div class="top-controls">
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Search songs...">
             <button id="search-btn"><i class="fas fa-search"></i></button>
-            
         </div>
         <div class="playlist-controls">
             <button id="create-playlist-btn" title="Create New Playlist">
@@ -33,7 +42,6 @@
             </select>
         </div>
     </div>
-
 
     <div id="song-list"></div>
 
@@ -51,7 +59,7 @@
         </div>
     </div>
 
-    <!-- Rest of the existing player controls -->
+    <!-- Player Controls -->
     <div id="custom-player">
         <div class="player-left">
             <div id="now-playing">
@@ -85,6 +93,7 @@
         </div>
     </div>
 
+    <!-- Recommended Songs Section -->
     <div class="recommended-songs">
         <h3>Recommended Songs</h3>
         <div class="sliding-tab" id="sliding-tab">
@@ -94,13 +103,12 @@
         <button id="slide-right">&#9654;</button>
     </div>
 
-    <!-- Add a theme toggle button -->
-    
-
     <audio id="audio-player"></audio>
+
+    <!-- Scripts -->
     <script src="scripts/main.js"></script>
     <script>
-        // JavaScript for sliding tab buttons
+        // JavaScript for sliding tab
         const slidingTab = document.getElementById('sliding-tab');
         const slideLeft = document.getElementById('slide-left');
         const slideRight = document.getElementById('slide-right');
@@ -112,19 +120,6 @@
         slideRight.addEventListener('click', () => {
             slidingTab.scrollBy({ left: 200, behavior: 'smooth' });
         });
-
-        // Theme toggle functionality
-        // document.getElementById('theme-toggle').addEventListener('click', () => {
-        //     document.body.classList.toggle('dark-theme');
-        // });
-
-        // Remove duplicate theme toggle buttons
-        // const themeToggleButtons = document.querySelectorAll('#theme-toggle');
-        // if (themeToggleButtons.length > 1) {
-        //     for (let i = 1; i < themeToggleButtons.length; i++) {
-        //         themeToggleButtons[i].remove();
-        //     }
-        // }
     </script>
 </body>
 </html>
