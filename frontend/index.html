@@ -35,30 +35,39 @@
 
     <h1>🎵 My Spotify Clone 🎵</h1>
 
-    <!-- For You Section -->
-    <div class="for-you-section">
-        <h2>For You</h2>
-        <div class="recommendations-grid" id="recommendations-grid">
-            <!-- Recommended songs will be added here dynamically -->
+    <div class="container">
+        <div class="sidebar">
+            <h2>Playlists</h2>
+            <div id="playlists-view" class="playlists-list"></div>
+        </div>
+        
+        <div class="main-content">
+            <!-- For You Section -->
+            <div class="for-you-section">
+                <h2>For You</h2>
+                <div class="recommendations-grid" id="recommendations-grid">
+                    <!-- Recommended songs will be added here dynamically -->
+                </div>
+            </div>
+
+            <!-- Last Session Section -->
+            <div class="last-session">
+                <h2>Last Session</h2>
+                <div class="session-tracks" id="last-session-tracks">
+                    <!-- Last played tracks will be added here dynamically -->
+                </div>
+            </div>
+
+            <div class="top-controls">
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search songs...">
+                    <button id="search-btn"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+
+            <div id="song-list"></div>
         </div>
     </div>
-
-    <!-- Last Session Section -->
-    <div class="last-session">
-        <h2>Last Session</h2>
-        <div class="session-tracks" id="last-session-tracks">
-            <!-- Last played tracks will be added here dynamically -->
-        </div>
-    </div>
-
-    <div class="top-controls">
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search songs...">
-            <button id="search-btn"><i class="fas fa-search"></i></button>
-        </div>
-    </div>
-
-    <div id="song-list"></div>
 
     <!-- Player Controls -->
     <div id="custom-player">

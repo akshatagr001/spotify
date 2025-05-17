@@ -882,3 +882,49 @@ body.dark-theme #theme-toggle {
     color: #1ed760;
     transform: scale(1.08);
 }
+
+/* Container and Sidebar Layout */
+.container {
+    display: flex;
+    height: calc(100vh - 100px);
+    margin-bottom: 100px;
+}
+
+.sidebar {
+    width: 40%;
+    max-width: 300px;
+    background: #121212;
+    border-right: 1px solid #282828;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.playlists-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.playlists-list .playlist-item {
+    padding: 10px;
+    border-radius: 4px;
+    background: #282828;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.playlists-list .playlist-item:hover {
+    background-color: #383838;
+}
+
+.sidebar h2 {
+    color: #fff;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
