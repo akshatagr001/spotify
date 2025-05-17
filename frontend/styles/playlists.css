@@ -103,3 +103,53 @@
     opacity: 1 !important;
     transform: translateY(0) !important;
 }
+
+#playlist-songs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 80%;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+#playlist-songs button {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    background: #232323;
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+#playlist-songs button img {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    object-fit: cover;
+    border-radius: 8px 0 0 8px;
+}
+
+#playlist-songs button span {
+    color: white;
+    font-size: 16px;
+    padding: 10px 15px;
+    text-align: left;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#playlist-songs button:hover {
+    transform: scale(1.01);
+    background: #1DB954;
+}
+
+#playlist-songs button.active {
+    background: #1DB954;
+}

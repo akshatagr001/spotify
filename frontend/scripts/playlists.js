@@ -165,18 +165,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const songListDiv = document.getElementById('playlist-songs');
 
     function renderPlaylistSongs(playlistName, songs) {
+        const songListDiv = document.getElementById('playlist-songs');
+        if (!songListDiv) return;
+
         songListDiv.innerHTML = '';
         document.querySelector('h1').textContent = playlistName;
-        playlistsGrid.style.display = 'none';
-        songListDiv.style.display = 'grid';
+        
+        // Hide grid and show song list
+        document.getElementById('playlists-view').style.display = 'none';
+        songListDiv.style.display = 'flex';
 
         songs.forEach((song, index) => {
             const btn = document.createElement('button');
+            btn.className = currentIndex === index ? 'active' : '';
             btn.innerHTML = `
-                <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" alt="${song.name}">
+                <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" 
+                     alt="${song.name}"
+                     onerror="this.src='default.jpg'">
                 <span>${song.name.replace(/\.(mp3|m4a)$/, '')}</span>
             `;
-            btn.onclick = () => playSong(index, songs);
+            btn.addEventListener('click', () => playSong(index, songs));
             songListDiv.appendChild(btn);
         });
     }
