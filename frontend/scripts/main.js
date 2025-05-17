@@ -256,7 +256,49 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLastSession();
     }
 
-    // Load songs first
+    // Define renderSongList inside DOMContentLoaded to ensure DOM is ready
+    function renderSongList() {
+        const songListDiv = document.getElementById('song-list');
+        if (!songListDiv) {
+            console.error('Song list container not found');
+            return;
+        }
+
+        console.log('Rendering songs:', songList?.length || 0);
+        songListDiv.innerHTML = '';
+
+        if (!Array.isArray(songList) || songList.length === 0) {
+            songListDiv.innerHTML = '<p style="color: #b3b3b3;">No songs found</p>';
+            return;
+        }
+
+        songList.forEach((song, index) => {
+            if (!song?.name) {
+                console.warn('Invalid song data:', song);
+                return;
+            }
+
+            const button = document.createElement('button');
+            const img = document.createElement('img');
+            const span = document.createElement('span');
+
+            img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
+            img.alt = song.name;
+            img.onerror = () => img.src = 'default.jpg';
+
+            span.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
+
+            button.appendChild(img);
+            button.appendChild(span);
+            
+            // Safe event binding
+            button.addEventListener('click', () => playSong(index));
+
+            songListDiv.appendChild(button);
+        });
+    }
+
+    // Load songs first, then render
     fetch(`${API_URL}/songs`)
         .then(response => response.json())
         .then(data => {
@@ -264,16 +306,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 allSongs = data.songs;
                 songList = allSongs;
                 console.log('Songs loaded:', allSongs.length);
-                
-                // Only after songs are loaded:
-                renderSongList();
+                renderSongList(); // Call render after songs are loaded
                 updateLastSession();
                 fetchRecommendations();
             } else {
                 console.error('Invalid song data:', data);
             }
         })
-        .catch(error => console.error('Error loading songs:', error));
+        .catch(error => {
+            console.error('Error loading songs:', error);
+            allSongs = [];
+            songList = [];
+            renderSongList();
+        });
 
     // Load playlists
     fetch(`${API_URL}/playlists`)
@@ -314,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function fetchRecommendations() {
     fetch(`${API_URL}/api/recommendations`)
         .then(response => response.json())
-        .then(data => {
+        .then data => {
             const recommendationsGrid = document.getElementById('recommendations-grid');
             if (!recommendationsGrid) return;
             
@@ -588,34 +633,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-sync recently played every 2 seconds
     setInterval(updateLastSession, 2000);
 });
-
-// Fix renderSongList function
-function renderSongList() {
-    const songListDiv = document.getElementById('song-list');
-    if (!songListDiv) {
-        console.error('Song list container not found');
-        return;
-    }
-
-    songListDiv.innerHTML = '';
-    if (!songList?.length) {
-        songListDiv.innerHTML = '<p style="color: #b3b3b3;">No songs found</p>';
-        return;
-    }
-
-    songList.forEach((song, index) => {
-        if (!song?.name) return;
-        
-        const btn = document.createElement('button');
-        btn.className = 'song-button';
-        btn.innerHTML = `
-            <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" 
-                 alt="${song.name}" 
-                 onerror="this.src='default.jpg'">
-            <span>${song.name.replace(/\.(mp3|m4a)$/, '')}</span>
-        `;
-        
-        btn.onclick = () => playSong(index);
-        songListDiv.appendChild(btn);
-    });
-}
