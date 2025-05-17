@@ -661,3 +661,64 @@ async function addSongToPlaylist(playlistName, song) {
         alert('Error adding song to playlist');
     }
 }
+
+// Drawer functionality
+const showPlaylistsBtn = document.getElementById('show-playlists');
+const playlistDrawer = document.getElementById('playlist-drawer');
+const closeDrawerBtn = document.querySelector('.close-drawer');
+const playlistView = document.getElementById('playlist-view');
+const backToPlaylistsBtn = document.querySelector('.back-to-playlists');
+
+showPlaylistsBtn.addEventListener('click', () => {
+    playlistDrawer.classList.add('open');
+});
+
+closeDrawerBtn.addEventListener('click', () => {
+    playlistDrawer.classList.remove('open');
+});
+
+backToPlaylistsBtn.addEventListener('click', () => {
+    playlistView.classList.remove('open');
+});
+
+function displayPlaylists(playlists) {
+    const container = document.getElementById('playlists-container');
+    container.innerHTML = '';
+    
+    playlists.forEach(playlist => {
+        const card = document.createElement('div');
+        card.className = 'playlist-card';
+        card.innerHTML = `<h3>${playlist.name}</h3>`;
+        
+        card.addEventListener('click', () => {
+            displayPlaylistSongs(playlist);
+            playlistView.classList.add('open');
+        });
+        
+        container.appendChild(card);
+    });
+}
+
+function displayPlaylistSongs(playlist) {
+    const songsContainer = document.getElementById('playlist-songs');
+    document.querySelector('.playlist-title').textContent = playlist.name;
+    songsContainer.innerHTML = '';
+    
+    playlist.songs.forEach(song => {
+        const songItem = document.createElement('div');
+        songItem.className = 'song-item';
+        songItem.innerHTML = `
+            <img src="${song.thumbnail}" alt="${song.title}" width="40">
+            <div class="song-info">
+                <div class="song-title">${song.title}</div>
+                <div class="song-artist">${song.artist}</div>
+            </div>
+        `;
+        
+        songItem.addEventListener('click', () => {
+            playSong(song);
+        });
+        
+        songsContainer.appendChild(songItem);
+    });
+}

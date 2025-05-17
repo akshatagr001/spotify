@@ -22,11 +22,29 @@
             <span></span>
         </div>        
         <div class="menu-content">
-            <a href="/playlists.html" class="menu-item"><i class="fas fa-list"></i> Playlists</a>
+            <a href="#" class="menu-item" id="show-playlists"><i class="fas fa-list"></i> Playlists</a>
             <a href="https://spotify-backend-6mr0.onrender.com/download/setup" class="download-link">
                 <i class="fas fa-download"></i> Download App
             </a>
         </div>
+    </div>
+
+    <!-- Add Playlist Drawer -->
+    <div id="playlist-drawer" class="playlist-drawer">
+        <div class="drawer-header">
+            <h2>Playlists</h2>
+            <button class="close-drawer"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="playlists-container" class="playlists-container"></div>
+    </div>
+
+    <!-- Add Playlist View -->
+    <div id="playlist-view" class="playlist-view">
+        <div class="playlist-header">
+            <button class="back-to-playlists"><i class="fas fa-arrow-left"></i></button>
+            <h2 class="playlist-title"></h2>
+        </div>
+        <div id="playlist-songs" class="playlist-songs"></div>
     </div>
 
     <a id="home-btn" class="home-button" href="index.html">
