@@ -649,3 +649,73 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-sync recently played every 2 seconds
     setInterval(updateLastSession, 2000);
 });
+
+function showContextMenu(e, song) {
+    e.preventDefault();
+
+    // Remove existing context menu
+    if (contextMenu) hideContextMenu();
+
+    // Create context menu
+    contextMenu = document.createElement('div');
+    contextMenu.className = 'context-menu';
+    contextMenu.innerHTML = `
+        <div class="context-menu-item has-submenu">
+            <i class="fas fa-plus"></i>
+            Add to Playlist
+            <div class="context-submenu">
+                ${Object.keys(playlists).map(name => `
+                    <div class="context-menu-item" data-playlist="${name}">
+                        <i class="fas fa-list"></i>${name}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    // Add click handlers for playlist items
+    contextMenu.querySelectorAll('.context-submenu .context-menu-item').forEach(item => {
+        item.onclick = () => {
+            const playlistName = item.dataset.playlist;
+            addSongToPlaylist(playlistName, song);
+            hideContextMenu();
+        };
+    });
+
+    // Position and show menu
+    contextMenu.style.top = `${e.pageY}px`;
+    contextMenu.style.left = `${e.pageX}px`;
+    document.body.appendChild(contextMenu);
+    setTimeout(() => contextMenu.classList.add('active'), 10);
+
+    // Hide on click outside
+    document.addEventListener('click', hideContextMenu);
+}
+
+function hideContextMenu() {
+    if (contextMenu) {
+        contextMenu.remove();
+        contextMenu = null;
+    }
+}
+
+async function addSongToPlaylist(playlistName, song) {
+    const playlist = playlists[playlistName] || [];
+    const updatedSongs = [...playlist, song];
+
+    try {
+        const response = await fetch(`${API_URL}/playlists/${encodeURIComponent(playlistName)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ songs: updatedSongs })
+        });
+
+        if (response.ok) {
+            playlists[playlistName] = updatedSongs;
+            alert(`Added to ${playlistName}`);
+        }
+    } catch (error) {
+        console.error('Error adding song to playlist:', error);
+        alert('Error adding song to playlist');
+    }
+}

@@ -7,6 +7,8 @@ let playlistNameInput = document.getElementById('playlist-name');
 let playlistSongList = document.getElementById('playlist-song-list');
 let savePlaylistBtn = document.getElementById('save-playlist');
 let closeModal = document.querySelector('.close');
+let currentPlaylist = null;
+let currentIndex = 0;
 
 // Fetch playlists from database and render cards
 function fetchAndRenderPlaylists() {
@@ -151,3 +153,78 @@ fetch(`${API_URL}/songs`)
 
 // Initial fetch and render of playlists
 fetchAndRenderPlaylists();
+
+// Import necessary player functions
+document.addEventListener('DOMContentLoaded', () => {
+    const playlistsGrid = document.getElementById('playlists-view');
+    const audioPlayer = document.getElementById('audio-player');
+    const playPauseBtn = document.getElementById('play-pause');
+    const progressBar = document.getElementById('progress');
+    const currentTimeEl = document.getElementById('current-time');
+    const durationEl = document.getElementById('duration');
+    const songListDiv = document.getElementById('playlist-songs');
+
+    function renderPlaylistSongs(playlistName, songs) {
+        songListDiv.innerHTML = '';
+        document.querySelector('h1').textContent = playlistName;
+        playlistsGrid.style.display = 'none';
+        songListDiv.style.display = 'grid';
+
+        songs.forEach((song, index) => {
+            const btn = document.createElement('button');
+            btn.innerHTML = `
+                <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" alt="${song.name}">
+                <span>${song.name.replace(/\.(mp3|m4a)$/, '')}</span>
+            `;
+            btn.onclick = () => playSong(index, songs);
+            songListDiv.appendChild(btn);
+        });
+    }
+
+    function playSong(index, songs) {
+        const song = songs[index];
+        currentIndex = index;
+        
+        if (audioPlayer) {
+            audioPlayer.src = `${API_URL}/stream/${song.name}`;
+            audioPlayer.play()
+                .then(() => {
+                    if (playPauseBtn) {
+                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    }
+                });
+        }
+
+        // Update now playing info
+        document.getElementById('now-playing-img').src = 
+            song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
+        document.getElementById('now-playing-title').textContent = 
+            song.name.replace(/\.(mp3|m4a)$/, '');
+    }
+
+    // Load playlists
+    fetch(`${API_URL}/playlists`)
+        .then(response => response.json())
+        .then(data => {
+            playlists = data.playlists;
+            renderPlaylistCards();
+        });
+
+    function renderPlaylistCards() {
+        playlistsGrid.innerHTML = '';
+        
+        Object.entries(playlists).forEach(([name, songs]) => {
+            const card = document.createElement('div');
+            card.className = 'playlist-card';
+            
+            const firstSong = songs[0];
+            card.innerHTML = `
+                <img src="${firstSong?.image ? `${API_URL}/static/images/${firstSong.image}` : 'default.jpg'}" alt="${name}">
+                <span>${name}</span>
+            `;
+            
+            card.onclick = () => renderPlaylistSongs(name, songs);
+            playlistsGrid.appendChild(card);
+        });
+    }
+});
