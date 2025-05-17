@@ -150,3 +150,52 @@
 .playlist-song.active {
     background: #1DB954;
 }
+
+.container {
+    display: flex;
+    height: calc(100vh - 100px); /* Account for player height */
+    margin-bottom: 100px; /* Space for player */
+}
+
+.sidebar {
+    width: 40%;
+    background: #121212;
+    border-right: 1px solid #282828;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.main-content {
+    width: 60%;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.playlists-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.playlists-list .playlist-item {
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.playlists-list .playlist-item:hover {
+    background-color: #282828;
+}
+
+.songs-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+/* Adjust the home button to fit in sidebar */
+.home-button {
+    margin-bottom: 20px;
+    display: block;
+}

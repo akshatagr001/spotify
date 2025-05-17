@@ -9,13 +9,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <a id="home-btn" class="home-button" href="index.html">
-        <i class="fas fa-home"></i>
-    </a>
-    
-    <h1>Playlists</h1>
-    <div id="playlists-view" class="playlists-grid"></div>
-    <div id="playlist-songs" class="songs-grid" style="display: none;"></div>
+    <div class="container">
+        <div class="sidebar">
+            <a id="home-btn" class="home-button" href="index.html">
+                <i class="fas fa-home"></i>
+            </a>
+            
+            <h2>Playlists</h2>
+            <div id="playlists-view" class="playlists-list"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="playlist-songs" class="songs-grid"></div>
+        </div>
+    </div>
 
     <!-- Add Player Controls -->
     <div id="custom-player">
