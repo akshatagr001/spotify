@@ -49,8 +49,11 @@ function updateLastSession() {
             
             lastSessionTracks.innerHTML = '';
             if (Array.isArray(data.recently_played) && data.recently_played.length > 0) {
-                // Limit to 25 songs
                 data.recently_played.slice(0, 25).forEach(song => {
+                    // Only create button if song exists in allSongs
+                    const songIndex = allSongs.findIndex(s => s.name === song.name);
+                    if (songIndex === -1) return;
+
                     const btn = document.createElement('button');
                     const img = document.createElement('img');
                     const text = document.createElement('span');
@@ -62,7 +65,11 @@ function updateLastSession() {
                     
                     btn.appendChild(img);
                     btn.appendChild(text);
-                    btn.onclick = () => playSong(allSongs.findIndex(s => s.name === song.name));
+                    btn.onclick = () => {
+                        if (songIndex !== -1) {
+                            playSong(songIndex);
+                        }
+                    };
                     
                     lastSessionTracks.appendChild(btn);
                 });
@@ -73,6 +80,56 @@ function updateLastSession() {
         .catch(error => {
             console.error('Error fetching last session:', error);
         });
+}
+
+function playSong(index) {
+    if (!songList || !songList[index]) {
+        console.error('Invalid song index or empty song list');
+        return;
+    }
+
+    currentIndex = index;
+    const song = songList[index];
+    
+    if (!song || !song.name) {
+        console.error('Invalid song data');
+        return;
+    }
+    
+    // Track user activity
+    fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
+        method: 'POST'
+    })
+    .then(() => {
+        updateLastSession();
+        fetchRecommendations();
+    })
+    .catch(error => console.error('Error tracking activity:', error));
+    
+    // Update UI only if elements exist
+    if (currentButton) currentButton.classList.remove('active');
+    currentButton = songListDiv?.children[index];
+    if (currentButton) currentButton.classList.add('active');
+    
+    // Update now playing info with network URLs
+    if (nowPlayingImg) {
+        nowPlayingImg.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
+    }
+    if (nowPlayingTitle) {
+        nowPlayingTitle.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
+    }
+    
+    // Update audio source with network URL
+    if (audioPlayer) {
+        audioPlayer.src = `${API_URL}/stream/${song.name}`;
+        audioPlayer.play()
+            .then(() => {
+                if (playPauseBtn) {
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                }
+            })
+            .catch(error => console.error('Error playing audio:', error));
+    }
 }
 
 // Progress bar interaction
@@ -351,7 +408,7 @@ savePlaylistBtn.onclick = async () => {
     }
 };
 
-// Update the fetch call to use API_URL
+// Update the fetch call for songs
 fetch(`${API_URL}/songs`)
     .then(response => {
         if (!response.ok) {
@@ -362,72 +419,49 @@ fetch(`${API_URL}/songs`)
     .then(data => {
         if (Array.isArray(data?.songs)) {
             allSongs = data.songs;
-            songList = allSongs;
-            console.log('Loaded songs:', songList); // Debug log
+            songList = allSongs; // Set initial songList
+            console.log('Songs loaded:', allSongs.length);
+            renderSongList(); // Render immediately after loading
         } else {
-            console.error('Invalid response format from server');
+            console.error('Invalid song data format:', data);
             allSongs = [];
+            songList = [];
         }
-        renderSongList();
     })
     .catch(error => {
         console.error('Error fetching songs:', error);
         allSongs = [];
-        renderSongList();
+        songList = [];
     });
 
-// Enhanced search functionality
-function performSearch() {
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    console.log('Searching for:', searchTerm);
-    
-    if (searchTerm === '') {
-        songList = allSongs;
-    } else {
-        const searchWords = searchTerm.split(' ');
-        songList = allSongs.filter(song => {
-            const songName = song.name.toLowerCase()
-                .replace(/\.(mp3|m4a)$/, '')
-                .replace(/_/g, ' ');
-            
-            // Match if all search words are found in the song name
-            return searchWords.every(word => songName.includes(word));
-        });
-    }
-    
-    console.log('Found', songList.length, 'matches');
-    renderSongList();
-    
-    // Save search term if results were found
-    if (songList.length > 0 && searchTerm) {
-        const recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-        if (!recentSearches.includes(searchTerm)) {
-            recentSearches.unshift(searchTerm);
-            if (recentSearches.length > 5) recentSearches.pop();
-            localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
-        }
-    }
-}
-
-// Debounce search for better performance
-searchInput.addEventListener('input', () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(performSearch, 300);
-});
-
 function renderSongList() {
+    if (!songListDiv) {
+        console.error('Song list container not found');
+        return;
+    }
+
     songListDiv.innerHTML = '';
-    if (songList.length === 0) {
+    
+    if (!Array.isArray(songList) || songList.length === 0) {
         songListDiv.innerHTML = '<p style="color: #b3b3b3;">No songs found</p>';
         return;
     }
+
+    console.log('Rendering songs:', songList.length);
+
     songList.forEach((song, index) => {
+        if (!song || !song.name) {
+            console.error('Invalid song data:', song);
+            return;
+        }
+
         const btn = document.createElement('button');
         const img = document.createElement('img');
         const text = document.createElement('span');
         
         img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
         img.alt = song.name;
+        img.onerror = () => { img.src = 'default.jpg'; };
         
         text.innerText = song.name.replace(/\.(mp3|m4a)$/, '');
         
@@ -452,38 +486,6 @@ function renderSongList() {
         
         songListDiv.appendChild(btn);
     });
-}
-
-function playSong(index) {
-    currentIndex = index;
-    const song = songList[index];
-    
-    // Track user activity
-    fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
-        method: 'POST'
-    })
-    .then(() => {
-        updateLastSession();
-        fetchRecommendations(); // Refresh recommendations
-    })
-    .catch(error => console.error('Error tracking activity:', error));
-    
-    // Update UI
-    if (currentButton) currentButton.classList.remove('active');
-    currentButton = songListDiv.children[index];
-    currentButton.classList.add('active');
-    
-    // Update now playing info with network URLs
-    nowPlayingImg.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
-    nowPlayingTitle.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
-    
-    // Update audio source with network URL
-    audioPlayer.src = `${API_URL}/stream/${song.name}`;
-    audioPlayer.play()
-        .then(() => {
-            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-        })
-        .catch(error => console.error('Error playing audio:', error));
 }
 
 // Play/Pause button

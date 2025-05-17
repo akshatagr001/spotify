@@ -60,6 +60,13 @@ function renderPlaylistCards() {
         card.style.animationDelay = `${0.05 * (idx + 1)}s`;
         playlistsView.appendChild(card);
     });
+
+    // Add show class to all cards after a tiny delay
+    setTimeout(() => {
+        document.querySelectorAll('.playlist-card').forEach(card => {
+            card.classList.add('show');
+        });
+    }, 10);
 }
 
 function updatePlaylistSongList() {

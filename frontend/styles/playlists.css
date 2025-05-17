@@ -12,7 +12,7 @@
     border-radius: 8px;
     padding: 0;
     cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+    transition: all 0.3s ease;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -20,10 +20,14 @@
     height: 260px;
     min-height: 260px;
     position: relative;
-    /* Remove initial opacity and transform - this was causing invisibility */
+    /* Start visible but transformed down */
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.playlist-card.show {
     opacity: 1;
-    transform: none;
-    border: 2px solid transparent;
+    transform: translateY(0);
 }
 
 .playlist-card img {
