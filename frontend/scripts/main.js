@@ -256,6 +256,25 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLastSession();
     }
 
+    // Load songs first
+    fetch(`${API_URL}/songs`)
+        .then(response => response.json())
+        .then(data => {
+            if (Array.isArray(data?.songs)) {
+                allSongs = data.songs;
+                songList = allSongs;
+                console.log('Songs loaded:', allSongs.length);
+                
+                // Only after songs are loaded:
+                renderSongList();
+                updateLastSession();
+                fetchRecommendations();
+            } else {
+                console.error('Invalid song data:', data);
+            }
+        })
+        .catch(error => console.error('Error loading songs:', error));
+
     // Load playlists
     fetch(`${API_URL}/playlists`)
         .then(response => response.json())
@@ -408,240 +427,195 @@ savePlaylistBtn.onclick = async () => {
     }
 };
 
-// Update the fetch call for songs
-fetch(`${API_URL}/songs`)
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (Array.isArray(data?.songs)) {
-            allSongs = data.songs;
-            songList = allSongs; // Set initial songList
-            console.log('Songs loaded:', allSongs.length);
-            renderSongList(); // Render immediately after loading
+// Move these event listeners after DOM elements are available
+document.addEventListener('DOMContentLoaded', () => {
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                if (!audioPlayer.src && songList.length > 0) {
+                    playSong(0);
+                } else {
+                    audioPlayer.play();
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                }
+            } else {
+                audioPlayer.pause();
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            }
+        });
+    }
+
+    // Previous track
+    prevTrackBtn.addEventListener('click', () => {
+        if (currentIndex > 0) {
+            playSong(currentIndex - 1);
         } else {
-            console.error('Invalid song data format:', data);
-            allSongs = [];
-            songList = [];
+            playSong(songList.length - 1);
         }
-    })
-    .catch(error => {
-        console.error('Error fetching songs:', error);
-        allSongs = [];
-        songList = [];
     });
 
+    // Next track
+    nextTrackBtn.addEventListener('click', () => {
+        playNextSong();
+    });
+
+    // Shuffle button
+    shuffleBtn.addEventListener('click', () => {
+        shuffleMode = !shuffleMode;
+        shuffleBtn.classList.toggle('active');
+    });
+
+    // Volume control
+    volumeControl.addEventListener('input', (e) => {
+        audioPlayer.volume = e.target.value / 100;
+        const volumeIcon = document.querySelector('.fa-volume-up');
+        if (e.target.value == 0) {
+            volumeIcon.className = 'fas fa-volume-mute';
+        } else if (e.target.value < 50) {
+            volumeIcon.className = 'fas fa-volume-down';
+        } else {
+            volumeIcon.className = 'fas fa-volume-up';
+        }
+    });
+
+    // Update progress bar and time
+    audioPlayer.addEventListener('timeupdate', () => {
+        if (!isNaN(audioPlayer.duration)) {
+            const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            progressBar.value = progress;
+            progressBar.style.setProperty('--value', progress + '%');
+            currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+            durationEl.textContent = formatTime(audioPlayer.duration);
+        }
+    });
+
+    // Format seconds into MM:SS
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Autoplay next song
+    audioPlayer.addEventListener('ended', () => {
+        playNextSong();
+    });
+
+    function playNextSong() {
+        if (shuffleMode) {
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * songList.length);
+            } while (newIndex === currentIndex && songList.length > 1);
+            playSong(newIndex);
+        } else {
+            playSong((currentIndex + 1) % songList.length);
+        }
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && e.target === document.body) {
+            e.preventDefault();
+            playPauseBtn.click();
+        } else if (e.code === 'ArrowLeft') {
+            prevTrackBtn.click();
+        } else if (e.code === 'ArrowRight') {
+            nextTrackBtn.click();
+        } else if (e.code === 'KeyF' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            searchInput.focus();
+        } else if (e.code === 'KeyY' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            searchBtn.click();
+        } else if (e.code === 'F11') {
+            e.preventDefault();
+            toggleFullScreen();
+        } else if (e.code === 'Escape') {
+            const playlistsView = document.getElementById('playlists-view');
+            const songList = document.getElementById('song-list');
+            
+            if (playlistsView.style.display === 'grid') {
+                playlistsView.style.display = 'none';
+                songList.style.display = 'grid';
+                currentPlaylist = null;
+                songList = allSongs;
+                renderSongList();
+            }
+        }
+    });
+
+    // Update fullscreen toggle function with better cross-platform support
+    function toggleFullScreen() {
+        // Get the main element (document.documentElement for web, window for desktop app)
+        const element = document.documentElement;
+
+        try {
+            if (!isFullscreen()) {
+                // Request fullscreen with fallbacks
+                if (element.requestFullscreen) {
+                    element.requestFullscreen();
+                } else if (element.webkitRequestFullscreen) { // Safari
+                    element.webkitRequestFullscreen();
+                } else if (element.msRequestFullscreen) { // IE11
+                    element.msRequestFullscreen();
+                }
+            } else {
+                // Exit fullscreen with fallbacks
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { // Safari
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { // IE11
+                    document.msExitFullscreen();
+                }
+            }
+        } catch (err) {
+            console.log(`Fullscreen error: ${err.message}`);
+        }
+    }
+
+    // Helper function to check fullscreen state
+    function isFullscreen() {
+        return !!(
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement
+        );
+    }
+
+    // Auto-sync recently played every 2 seconds
+    setInterval(updateLastSession, 2000);
+});
+
+// Fix renderSongList function
 function renderSongList() {
+    const songListDiv = document.getElementById('song-list');
     if (!songListDiv) {
         console.error('Song list container not found');
         return;
     }
 
     songListDiv.innerHTML = '';
-    
-    if (!Array.isArray(songList) || songList.length === 0) {
+    if (!songList?.length) {
         songListDiv.innerHTML = '<p style="color: #b3b3b3;">No songs found</p>';
         return;
     }
 
-    console.log('Rendering songs:', songList.length);
-
     songList.forEach((song, index) => {
-        if (!song || !song.name) {
-            console.error('Invalid song data:', song);
-            return;
-        }
-
+        if (!song?.name) return;
+        
         const btn = document.createElement('button');
-        const img = document.createElement('img');
-        const text = document.createElement('span');
+        btn.className = 'song-button';
+        btn.innerHTML = `
+            <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" 
+                 alt="${song.name}" 
+                 onerror="this.src='default.jpg'">
+            <span>${song.name.replace(/\.(mp3|m4a)$/, '')}</span>
+        `;
         
-        img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
-        img.alt = song.name;
-        img.onerror = () => { img.src = 'default.jpg'; };
-        
-        text.innerText = song.name.replace(/\.(mp3|m4a)$/, '');
-        
-        btn.appendChild(img);
-        btn.appendChild(text);
         btn.onclick = () => playSong(index);
-        
-        // Add context menu event with position check
-        btn.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Hide any existing context menu
-            if (contextMenu) {
-                hideContextMenu();
-            }
-            
-            // Show new context menu
-            showContextMenu(e, song);
-            return false;
-        });
-        
         songListDiv.appendChild(btn);
     });
 }
-
-// Play/Pause button
-playPauseBtn.addEventListener('click', () => {
-    if (audioPlayer.paused) {
-        if (!audioPlayer.src) {
-            playSong(0);
-        } else {
-            audioPlayer.play();
-            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-        }
-    } else {
-        audioPlayer.pause();
-        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-    }
-});
-
-// Previous track
-prevTrackBtn.addEventListener('click', () => {
-    if (currentIndex > 0) {
-        playSong(currentIndex - 1);
-    } else {
-        playSong(songList.length - 1);
-    }
-});
-
-// Next track
-nextTrackBtn.addEventListener('click', () => {
-    playNextSong();
-});
-
-// Shuffle button
-shuffleBtn.addEventListener('click', () => {
-    shuffleMode = !shuffleMode;
-    shuffleBtn.classList.toggle('active');
-});
-
-// Volume control
-volumeControl.addEventListener('input', (e) => {
-    audioPlayer.volume = e.target.value / 100;
-    const volumeIcon = document.querySelector('.fa-volume-up');
-    if (e.target.value == 0) {
-        volumeIcon.className = 'fas fa-volume-mute';
-    } else if (e.target.value < 50) {
-        volumeIcon.className = 'fas fa-volume-down';
-    } else {
-        volumeIcon.className = 'fas fa-volume-up';
-    }
-});
-
-// Update progress bar and time
-audioPlayer.addEventListener('timeupdate', () => {
-    if (!isNaN(audioPlayer.duration)) {
-        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        progressBar.value = progress;
-        progressBar.style.setProperty('--value', progress + '%');
-        currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
-        durationEl.textContent = formatTime(audioPlayer.duration);
-    }
-});
-
-// Format seconds into MM:SS
-function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-}
-
-// Autoplay next song
-audioPlayer.addEventListener('ended', () => {
-    playNextSong();
-});
-
-function playNextSong() {
-    if (shuffleMode) {
-        let newIndex;
-        do {
-            newIndex = Math.floor(Math.random() * songList.length);
-        } while (newIndex === currentIndex && songList.length > 1);
-        playSong(newIndex);
-    } else {
-        playSong((currentIndex + 1) % songList.length);
-    }
-}
-
-// Keyboard controls
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && e.target === document.body) {
-        e.preventDefault();
-        playPauseBtn.click();
-    } else if (e.code === 'ArrowLeft') {
-        prevTrackBtn.click();
-    } else if (e.code === 'ArrowRight') {
-        nextTrackBtn.click();
-    } else if (e.code === 'KeyF' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        searchInput.focus();
-    } else if (e.code === 'KeyY' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        searchBtn.click();
-    } else if (e.code === 'F11') {
-        e.preventDefault();
-        toggleFullScreen();
-    } else if (e.code === 'Escape') {
-        const playlistsView = document.getElementById('playlists-view');
-        const songList = document.getElementById('song-list');
-        
-        if (playlistsView.style.display === 'grid') {
-            playlistsView.style.display = 'none';
-            songList.style.display = 'grid';
-            currentPlaylist = null;
-            songList = allSongs;
-            renderSongList();
-        }
-    }
-});
-
-// Update fullscreen toggle function with better cross-platform support
-function toggleFullScreen() {
-    // Get the main element (document.documentElement for web, window for desktop app)
-    const element = document.documentElement;
-
-    try {
-        if (!isFullscreen()) {
-            // Request fullscreen with fallbacks
-            if (element.requestFullscreen) {
-                element.requestFullscreen();
-            } else if (element.webkitRequestFullscreen) { // Safari
-                element.webkitRequestFullscreen();
-            } else if (element.msRequestFullscreen) { // IE11
-                element.msRequestFullscreen();
-            }
-        } else {
-            // Exit fullscreen with fallbacks
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) { // Safari
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) { // IE11
-                document.msExitFullscreen();
-            }
-        }
-    } catch (err) {
-        console.log(`Fullscreen error: ${err.message}`);
-    }
-}
-
-// Helper function to check fullscreen state
-function isFullscreen() {
-    return !!(
-        document.fullscreenElement ||
-        document.webkitFullscreenElement ||
-        document.mozFullScreenElement ||
-        document.msFullscreenElement
-    );
-}
-
-// Auto-sync recently played every 2 seconds
-setInterval(updateLastSession, 2000);
