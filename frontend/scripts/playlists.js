@@ -191,9 +191,9 @@ fetchAndRenderPlaylists();
 
 // Import necessary player functions
 document.addEventListener('DOMContentLoaded', () => {
+    const playlistsGrid = document.getElementById('playlists-view');
     const audioPlayer = document.getElementById('audio-player');
     const playPauseBtn = document.getElementById('play-pause');
-    const progressBar = document.getElementById('progress');
     const currentTimeEl = document.getElementById('current-time');
     const durationEl = document.getElementById('duration');
     const songListDiv = document.getElementById('playlist-songs');
@@ -239,28 +239,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function playSong(index, songs) {
+        if (!songs || !songs[index]) return;
+        
+        const song = songs[index];
         currentIndex = index;
         currentSongs = songs;
-        const song = songs[index];
         
         if (audioPlayer) {
             audioPlayer.src = `${API_URL}/stream/${song.name}`;
             audioPlayer.play()
                 .then(() => {
-                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    if (playPauseBtn) {
+                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    }
                 })
                 .catch(error => console.error('Error playing song:', error));
+
+            // Update now playing info
+            const nowPlayingImg = document.getElementById('now-playing-img');
+            const nowPlayingTitle = document.getElementById('now-playing-title');
+            
+            if (nowPlayingImg) {
+                nowPlayingImg.src = song.image ? 
+                    `${API_URL}/static/images/${song.image}` : 
+                    'default.jpg';
+            }
+            if (nowPlayingTitle) {
+                nowPlayingTitle.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
+            }
+
+            // Update active state
+            document.querySelectorAll('.playlist-song').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            songListDiv?.children[index]?.classList.add('active');
         }
-
-        // Update now playing info
-        document.getElementById('now-playing-img').src = 
-            song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
-        document.getElementById('now-playing-title').textContent = 
-            song.name.replace(/\.(mp3|m4a)$/, '');
-
-        // Update active song in list
-        document.querySelectorAll('#playlist-songs button').forEach(btn => btn.classList.remove('active'));
-        songListDiv.children[index + 1].classList.add('active'); // +1 because of back button
     }
 
     // Player Controls
@@ -327,6 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
     function renderPlaylistCards() {
+        if (!playlistsGrid) return;
         playlistsGrid.innerHTML = '';
         
         Object.entries(playlists).forEach(([name, songs]) => {
