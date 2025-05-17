@@ -63,31 +63,24 @@ h1, h2, h3, h4, h5, h6, label, .recommendation-title, .recommendation-plays, .tr
 
 #song-list button span {
     color: white;
-    font-size: 20px;
-    padding: 15px 10px;
-    text-align: center;
-    width: 100%;
-    background: rgba(40, 40, 40, 0.95);
-    margin-top: auto;
+    font-size: 16px;
+    padding: 10px 15px;
+    text-align: left;
+    background: transparent;
+    margin: 0;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #song-list button:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 255, 89, 0.3);
-    background: #383838;
-}
-
-#song-list button:hover img {
-    transform: scale(1.05);
+    transform: scale(1.01);
+    background: #1DB954 !important;
 }
 
 #song-list button.active {
-    background: #1DB954;
-    box-shadow: 0 0 20px rgb(0, 255, 89);
-}
-
-#song-list button.active span {
-    background: rgba(29, 185, 84, 0.95);
+    background: #1DB954 !important;
 }
 
 /* Player Controls */

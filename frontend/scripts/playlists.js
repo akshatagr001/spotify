@@ -25,7 +25,7 @@ function renderPlaylistCards() {
     const playlistsView = document.getElementById('playlists-view');
     playlistsView.innerHTML = '';
 
-    // Create Playlist button (always first)
+    // Create Playlist button
     const newPlaylistCard = document.createElement('div');
     newPlaylistCard.className = 'playlist-card new-playlist playlist-fadein';
     newPlaylistCard.innerHTML = `
@@ -40,14 +40,15 @@ function renderPlaylistCards() {
     };
     playlistsView.appendChild(newPlaylistCard);
 
-    // Render playlists from database
+    // Render existing playlists
     Object.entries(playlists).forEach(([name, songs], idx) => {
         if (!Array.isArray(songs) || songs.length === 0) return;
+        
         const card = document.createElement('div');
         card.className = 'playlist-card playlist-fadein';
         const firstSong = songs[0];
-        const image = firstSong && firstSong.image ?
-            `${API_URL}/static/images/${firstSong.image}` :
+        const image = firstSong?.image ? 
+            `${API_URL}/static/images/${firstSong.image}` : 
             'default.jpg';
 
         card.innerHTML = `
@@ -55,20 +56,54 @@ function renderPlaylistCards() {
             <span>${name}</span>
         `;
 
-        card.onclick = () => {
-            alert(`Playlist: ${name}\nSongs:\n${songs.map(s => s.name.replace(/\.(mp3|m4a)$/,'')).join('\n')}`);
-        };
-
-        card.style.animationDelay = `${0.05 * (idx + 1)}s`;
+        card.onclick = () => showPlaylistSongs(name, songs);
         playlistsView.appendChild(card);
     });
 
-    // Add show class to all cards after a tiny delay
+    // Show all cards with animation
     setTimeout(() => {
         document.querySelectorAll('.playlist-card').forEach(card => {
             card.classList.add('show');
         });
     }, 10);
+}
+
+function showPlaylistSongs(playlistName, songs) {
+    const playlistsView = document.getElementById('playlists-view');
+    const songListDiv = document.getElementById('playlist-songs');
+    const title = document.querySelector('h1');
+
+    playlistsView.style.display = 'none';
+    songListDiv.style.display = 'flex';
+    title.textContent = playlistName;
+    songListDiv.innerHTML = '';
+
+    // Add back button
+    const backBtn = document.createElement('button');
+    backBtn.className = 'back-button';
+    backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back';
+    backBtn.onclick = () => {
+        playlistsView.style.display = 'grid';
+        songListDiv.style.display = 'none';
+        title.textContent = 'Playlists';
+    };
+    songListDiv.appendChild(backBtn);
+
+    // Render songs
+    songs.forEach((song, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'playlist-song';
+        btn.innerHTML = `
+            <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" 
+                 alt="${song.name}"
+                 onerror="this.src='default.jpg'">
+            <span>${song.name.replace(/\.(mp3|m4a)$/, '')}</span>
+        `;
+        btn.onclick = () => playSong(index, songs);
+        songListDiv.appendChild(btn);
+    });
+
+    currentPlaylist = songs;
 }
 
 function updatePlaylistSongList() {
@@ -156,13 +191,16 @@ fetchAndRenderPlaylists();
 
 // Import necessary player functions
 document.addEventListener('DOMContentLoaded', () => {
-    const playlistsGrid = document.getElementById('playlists-view');
     const audioPlayer = document.getElementById('audio-player');
     const playPauseBtn = document.getElementById('play-pause');
     const progressBar = document.getElementById('progress');
     const currentTimeEl = document.getElementById('current-time');
     const durationEl = document.getElementById('duration');
     const songListDiv = document.getElementById('playlist-songs');
+    const prevTrackBtn = document.getElementById('prev-track');
+    const nextTrackBtn = document.getElementById('next-track');
+
+    let currentSongs = [];
 
     function renderPlaylistSongs(playlistName, songs) {
         const songListDiv = document.getElementById('playlist-songs');
@@ -174,6 +212,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide grid and show song list
         document.getElementById('playlists-view').style.display = 'none';
         songListDiv.style.display = 'flex';
+
+        // Add back button
+        const backBtn = document.createElement('button');
+        backBtn.className = 'back-button';
+        backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back';
+        backBtn.onclick = () => {
+            document.getElementById('playlists-view').style.display = 'grid';
+            songListDiv.style.display = 'none';
+            document.querySelector('h1').textContent = 'Playlists';
+        };
+        songListDiv.appendChild(backBtn);
 
         songs.forEach((song, index) => {
             const btn = document.createElement('button');
@@ -190,17 +239,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function playSong(index, songs) {
-        const song = songs[index];
         currentIndex = index;
+        currentSongs = songs;
+        const song = songs[index];
         
         if (audioPlayer) {
             audioPlayer.src = `${API_URL}/stream/${song.name}`;
             audioPlayer.play()
                 .then(() => {
-                    if (playPauseBtn) {
-                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    }
-                });
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                })
+                .catch(error => console.error('Error playing song:', error));
         }
 
         // Update now playing info
@@ -208,6 +257,65 @@ document.addEventListener('DOMContentLoaded', () => {
             song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
         document.getElementById('now-playing-title').textContent = 
             song.name.replace(/\.(mp3|m4a)$/, '');
+
+        // Update active song in list
+        document.querySelectorAll('#playlist-songs button').forEach(btn => btn.classList.remove('active'));
+        songListDiv.children[index + 1].classList.add('active'); // +1 because of back button
+    }
+
+    // Player Controls
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            } else {
+                audioPlayer.pause();
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            }
+        });
+    }
+
+    // Progress bar
+    audioPlayer.addEventListener('timeupdate', () => {
+        if (!isNaN(audioPlayer.duration)) {
+            const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            progressBar.value = progress;
+            progressBar.style.setProperty('--value', `${progress}%`);
+            currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+            durationEl.textContent = formatTime(audioPlayer.duration);
+        }
+    });
+
+    progressBar.addEventListener('click', (e) => {
+        const bounds = progressBar.getBoundingClientRect();
+        const percent = (e.clientX - bounds.left) / bounds.width;
+        audioPlayer.currentTime = percent * audioPlayer.duration;
+    });
+
+    // Track navigation
+    prevTrackBtn.addEventListener('click', () => {
+        if (currentIndex > 0) {
+            playSong(currentIndex - 1, currentSongs);
+        }
+    });
+
+    nextTrackBtn.addEventListener('click', () => {
+        if (currentIndex < currentSongs.length - 1) {
+            playSong(currentIndex + 1, currentSongs);
+        }
+    });
+
+    audioPlayer.addEventListener('ended', () => {
+        if (currentIndex < currentSongs.length - 1) {
+            playSong(currentIndex + 1, currentSongs);
+        }
+    });
+
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
     }
 
     // Load playlists

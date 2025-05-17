@@ -410,95 +410,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     fetchRecommendations();
     updateLastSession();
-});
 
-// Show/hide modal
-if (createPlaylistBtn) {
-    createPlaylistBtn.onclick = () => {
-        playlistModal.style.display = 'block';
-        updatePlaylistSongList();
-    };
-}
-if (closeModal) {
-    closeModal.onclick = () => {
-        playlistModal.style.display = 'none';
-    };
-}
-if (window && playlistModal) {
-    window.onclick = (event) => {
-        if (event.target === playlistModal) {
-            playlistModal.style.display = 'none';
-        }
-    };
-}
-
-// Update song list in modal
-function updatePlaylistSongList() {
-    playlistSongList.innerHTML = '';
-    allSongs.forEach(song => {
-        const label = document.createElement('label');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = song.name;
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(song.name.replace(/\.(mp3|m4a)$/, '')));
-        playlistSongList.appendChild(label);
-    });
-}
-
-// Save playlist
-savePlaylistBtn.onclick = async () => {
-    const playlistName = playlistNameInput.value.trim();
-    if (!playlistName) {
-        alert('Please enter a playlist name');
-        return;
-    }
-
-    const selectedSongs = Array.from(playlistSongList.querySelectorAll('input[type="checkbox"]:checked'))
-        .map(checkbox => {
-            const song = allSongs.find(s => s.name === checkbox.value);
-            return song;
-        });
-
-    if (selectedSongs.length === 0) {
-        alert('Please select at least one song');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/playlists/${encodeURIComponent(playlistName)}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ songs: selectedSongs })
-        });
-
-        if (response.ok) {
-            playlists[playlistName] = selectedSongs;
-            playlistModal.style.display = 'none';
-            playlistNameInput.value = '';
-            alert('Playlist created successfully!');
-        } else {
-            alert('Error creating playlist');
-        }
-    } catch (error) {
-        console.error('Error saving playlist:', error);
-        alert('Error saving playlist');
-    }
-};
-
-// Move these event listeners after DOM elements are available
-document.addEventListener('DOMContentLoaded', () => {
+    // Player Controls - Move inside DOMContentLoaded
     if (playPauseBtn) {
         playPauseBtn.addEventListener('click', () => {
-            if (audioPlayer.paused) {
-                if (!audioPlayer.src && songList.length > 0) {
-                    playSong(0);
-                } else {
-                    audioPlayer.play();
+            if (!audioPlayer.src && songList.length > 0) {
+                playSong(0);
+            } else if (audioPlayer.paused) {
+                audioPlayer.play().then(() => {
                     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                }
+                });
             } else {
                 audioPlayer.pause();
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
@@ -506,63 +427,74 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Previous track
-    prevTrackBtn.addEventListener('click', () => {
-        if (currentIndex > 0) {
-            playSong(currentIndex - 1);
-        } else {
-            playSong(songList.length - 1);
-        }
-    });
-
-    // Next track
-    nextTrackBtn.addEventListener('click', () => {
-        playNextSong();
-    });
-
-    // Shuffle button
-    shuffleBtn.addEventListener('click', () => {
-        shuffleMode = !shuffleMode;
-        shuffleBtn.classList.toggle('active');
-    });
-
-    // Volume control
-    volumeControl.addEventListener('input', (e) => {
-        audioPlayer.volume = e.target.value / 100;
-        const volumeIcon = document.querySelector('.fa-volume-up');
-        if (e.target.value == 0) {
-            volumeIcon.className = 'fas fa-volume-mute';
-        } else if (e.target.value < 50) {
-            volumeIcon.className = 'fas fa-volume-down';
-        } else {
-            volumeIcon.className = 'fas fa-volume-up';
-        }
-    });
-
-    // Update progress bar and time
-    audioPlayer.addEventListener('timeupdate', () => {
-        if (!isNaN(audioPlayer.duration)) {
-            const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-            progressBar.value = progress;
-            progressBar.style.setProperty('--value', progress + '%');
-            currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
-            durationEl.textContent = formatTime(audioPlayer.duration);
-        }
-    });
-
-    // Format seconds into MM:SS
-    function formatTime(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    if (prevTrackBtn) {
+        prevTrackBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                playSong(currentIndex - 1);
+            } else {
+                playSong(songList.length - 1);
+            }
+        });
     }
 
-    // Autoplay next song
-    audioPlayer.addEventListener('ended', () => {
-        playNextSong();
-    });
+    if (nextTrackBtn) {
+        nextTrackBtn.addEventListener('click', () => {
+            playNextSong();
+        });
+    }
 
+    if (shuffleBtn) {
+        shuffleBtn.addEventListener('click', () => {
+            shuffleMode = !shuffleMode;
+            shuffleBtn.classList.toggle('active');
+        });
+    }
+
+    if (progressBar) {
+        progressBar.addEventListener('click', (e) => {
+            const bounds = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - bounds.left) / bounds.width;
+            audioPlayer.currentTime = percent * audioPlayer.duration;
+        });
+    }
+
+    if (volumeControl) {
+        volumeControl.addEventListener('input', (e) => {
+            if (audioPlayer) {
+                audioPlayer.volume = e.target.value / 100;
+                const volumeIcon = document.querySelector('.fa-volume-up');
+                if (volumeIcon) {
+                    if (e.target.value == 0) {
+                        volumeIcon.className = 'fas fa-volume-mute';
+                    } else if (e.target.value < 50) {
+                        volumeIcon.className = 'fas fa-volume-down';
+                    } else {
+                        volumeIcon.className = 'fas fa-volume-up';
+                    }
+                }
+            }
+        });
+    }
+
+    if (audioPlayer) {
+        audioPlayer.addEventListener('ended', () => {
+            playNextSong();
+        });
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (!isNaN(audioPlayer.duration)) {
+                const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                progressBar.value = progress;
+                progressBar.style.setProperty('--value', `${progress}%`);
+                currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+                durationEl.textContent = formatTime(audioPlayer.duration);
+            }
+        });
+    }
+
+    // Move playNextSong inside DOMContentLoaded
     function playNextSong() {
+        if (!songList?.length) return;
         if (shuffleMode) {
             let newIndex;
             do {
@@ -573,6 +505,19 @@ document.addEventListener('DOMContentLoaded', () => {
             playSong((currentIndex + 1) % songList.length);
         }
     }
+
+    // Format time helper
+    function formatTime(seconds) {
+        if (!seconds) return '0:00';
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Autoplay next song
+    audioPlayer.addEventListener('ended', () => {
+        playNextSong();
+    });
 
     // Keyboard controls
     document.addEventListener('keydown', (e) => {
