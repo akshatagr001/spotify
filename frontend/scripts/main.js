@@ -39,6 +39,47 @@ const savePlaylistBtn = document.getElementById('save-playlist');
 // Network configuration
 const API_URL = `https://spotify-backend-6mr0.onrender.com`;
 
+// Utility functions
+function formatTime(seconds) {
+    if (!seconds) return '0:00';
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+function fetchRecommendations() {
+    fetch(`${API_URL}/api/recommendations`)
+        .then(response => response.json())
+        .then(data => {
+            const recommendationsGrid = document.getElementById('recommendations-grid');
+            if (!recommendationsGrid) return;
+            
+            recommendationsGrid.innerHTML = '';
+            const recommendations = data.recommendations?.slice(0, 10) || [];
+            
+            recommendations.forEach(song => {
+                const div = document.createElement('div');
+                div.className = 'recommendation-item';
+                div.innerHTML = `
+                    <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" 
+                         alt="${song.title}">
+                    <div class="recommendation-info">
+                        <p class="recommendation-title">${song.title}</p>
+                        <p class="recommendation-plays">${song.play_count} plays</p>
+                    </div>
+                `;
+                div.addEventListener('click', () => {
+                    const songIndex = allSongs.findIndex(s => s.name === song.name);
+                    if (songIndex !== -1) {
+                        playSong(songIndex);
+                    }
+                });
+                recommendationsGrid.appendChild(div);
+            });
+        })
+        .catch(error => console.error('Error fetching recommendations:', error));
+}
+
 // Function declarations - move before usage
 function updateLastSession() {
     fetch(`${API_URL}/recently-played`)
@@ -351,66 +392,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Fix fetchRecommendations function
-    function fetchRecommendations() {
-        fetch(`${API_URL}/api/recommendations`)
-            .then(response => response.json())
-            .then(data => {  // Fix: Add missing parentheses and arrow function syntax
-                const recommendationsGrid = document.getElementById('recommendations-grid');
-                if (!recommendationsGrid) return;
-                
-                recommendationsGrid.innerHTML = '';
-                
-                const recommendations = data.recommendations?.slice(0, 10) || [];
-                
-                recommendations.forEach(song => {
-                    const div = document.createElement('div');
-                    div.className = 'recommendation-item';
-                    
-                    div.innerHTML = `
-                        <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" 
-                             alt="${song.title}">
-                        <div class="recommendation-info">
-                            <p class="recommendation-title">${song.title}</p>
-                            <p class="recommendation-plays">${song.play_count} plays</p>
-                        </div>
-                    `;
-                    
-                    div.addEventListener('click', () => {  // Fix: Use addEventListener instead of onclick
-                        const songIndex = allSongs.findIndex(s => s.name === song.name);
-                        if (songIndex !== -1) {
-                            playSong(songIndex);
-                        }
-                    });
-                    
-                    recommendationsGrid.appendChild(div);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching recommendations:', error);
-            });
-    }
-
-    // Add search functionality
-    searchInput?.addEventListener('input', () => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            if (searchTerm === '') {
-                songList = allSongs;
-            } else {
-                songList = allSongs.filter(song => 
-                    song.name.toLowerCase().includes(searchTerm)
-                );
-            }
-            renderSongList();
-        }, 300);
-    });
-
-    // Initialize
-    fetchRecommendations();
-    updateLastSession();
-
     // Player Controls - Move inside DOMContentLoaded
     if (playPauseBtn) {
         playPauseBtn.addEventListener('click', () => {
@@ -506,14 +487,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Format time helper
-    function formatTime(seconds) {
-        if (!seconds) return '0:00';
-        const minutes = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${minutes}:${secs.toString().padStart(2, '0')}`;
-    }
-
     // Autoplay next song
     audioPlayer.addEventListener('ended', () => {
         playNextSong();
@@ -593,6 +566,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auto-sync recently played every 2 seconds
     setInterval(updateLastSession, 2000);
+});
+
+// Move playlist modal code into DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    if (createPlaylistBtn && playlistModal) {
+        createPlaylistBtn.onclick = () => {
+            playlistModal.style.display = 'block';
+            updatePlaylistSongList();
+        };
+    }
+
+    if (closeModal) {
+        closeModal.onclick = () => {
+            playlistModal.style.display = 'none';
+        };
+    }
+
+    if (window && playlistModal) {
+        window.onclick = (event) => {
+            if (event.target === playlistModal) {
+                playlistModal.style.display = 'none';
+            }
+        };
+    }
 });
 
 function showContextMenu(e, song) {
