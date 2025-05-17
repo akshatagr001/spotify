@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Response, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
@@ -289,6 +289,16 @@ async def recently_played():
     except Exception as e:
         logger.error(f"Error fetching recently played: {e}")
         return {"recently_played": [], "error": str(e)}
+
+@app.get("/playlists.html", response_class=HTMLResponse)
+async def serve_playlists_page():
+    playlists_path = os.path.join(os.path.dirname(__file__), "../frontend/playlists.html")
+    try:
+        with open(playlists_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception as e:
+        logger.error(f"Could not serve playlists.html: {e}")
+        return HTMLResponse(content="Playlists page not found.", status_code=404)
 
 # Initialize Tortoise ORM
 register_tortoise(

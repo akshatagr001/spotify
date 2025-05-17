@@ -67,7 +67,7 @@ function updateLastSession() {
                     lastSessionTracks.appendChild(btn);
                 });
             } else {
-                lastSessionTracks.innerHTML = '<p style="color:#b3b3b3;">No recently played songs</p>';
+                lastSessionTracks.innerHTML = '<p style="color:#b3b3b3;font-weight:bold;">No recently played songs</p>';
             }
         })
         .catch(error => {
@@ -183,22 +183,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize playlist button click handler
     if (playlistsBtn) {
         playlistsBtn.addEventListener('click', () => {
-            const playlistsView = document.getElementById('playlists-view');
-            const songList = document.getElementById('song-list');
-            const lastSession = document.querySelector('.last-session');
-            const forYouSection = document.querySelector('.for-you-section');
-            
-            // Hide main sections
-            songList.style.display = 'none';
-            lastSession.style.display = 'none';
-            forYouSection.style.display = 'none';
-            
-            // Show playlists
-            playlistsView.style.display = 'grid';
-            
-            // Render playlists
             renderPlaylistCards();
-            
+            // Animate all playlist cards
+            setTimeout(() => {
+                document.querySelectorAll('.playlist-fadein').forEach(card => {
+                    card.classList.add('show');
+                });
+            }, 10);
             // Close hamburger menu
             if (hamburgerMenu) hamburgerMenu.classList.remove('active');
         });
@@ -706,13 +697,22 @@ function isFullscreen() {
 // Add function to render playlist cards
 function renderPlaylistCards() {
     const playlistsView = document.getElementById('playlists-view');
-    
-    // Keep only the new playlist card
+    const songListDiv = document.getElementById('song-list');
+    const lastSession = document.querySelector('.last-session');
+    const forYouSection = document.querySelector('.for-you-section');
+
+    // Hide other sections, show playlists grid
+    if (songListDiv) songListDiv.style.display = 'none';
+    if (lastSession) lastSession.style.display = 'none';
+    if (forYouSection) forYouSection.style.display = 'none';
+    playlistsView.style.display = 'grid';
+
+    // Clear playlists grid
     playlistsView.innerHTML = '';
-    
-    // Add new playlist card
+
+    // Add new playlist card (always first)
     const newPlaylistCard = document.createElement('div');
-    newPlaylistCard.className = 'playlist-card new-playlist';
+    newPlaylistCard.className = 'playlist-card new-playlist playlist-fadein';
     newPlaylistCard.innerHTML = `
         <div class="plus-icon">
             <i class="fas fa-plus"></i>
@@ -724,34 +724,38 @@ function renderPlaylistCards() {
         updatePlaylistSongList();
     };
     playlistsView.appendChild(newPlaylistCard);
-    
-    // Add existing playlists
-    Object.entries(playlists).forEach(([name, songs]) => {
+
+    // Fix: playlists is an object with playlistName: [songs]
+    Object.entries(playlists).forEach(([name, songs], idx) => {
+        // Defensive: skip if songs is not an array or empty
+        if (!Array.isArray(songs) || songs.length === 0) return;
         const card = document.createElement('div');
-        card.className = 'playlist-card';
-        
+        card.className = 'playlist-card playlist-fadein';
         // Use first song's image or default
         const firstSong = songs[0];
-        const image = firstSong?.image ? 
-            `${API_URL}/static/images/${firstSong.image}` : 
+        const image = firstSong && firstSong.image ?
+            `${API_URL}/static/images/${firstSong.image}` :
             'default.jpg';
-            
+
         card.innerHTML = `
             <img src="${image}" alt="${name}">
             <span>${name}</span>
         `;
-        
+
         card.onclick = () => {
             songList = songs;
             currentPlaylist = name;
-            
-            // Switch back to song list view
             playlistsView.style.display = 'none';
-            document.getElementById('song-list').style.display = 'grid';
-            
+            if (songListDiv) songListDiv.style.display = 'grid';
+            if (lastSession) lastSession.style.display = 'block';
+            if (forYouSection) forYouSection.style.display = 'block';
             renderSongList();
         };
-        
+
+        card.style.animationDelay = `${0.05 * (idx + 1)}s`;
         playlistsView.appendChild(card);
     });
 }
+
+// Auto-sync recently played every 2 seconds
+setInterval(updateLastSession, 2000);

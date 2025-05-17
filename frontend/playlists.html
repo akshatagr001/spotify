@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playlists - My Spotify Clone</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <a id="home-btn" class="home-button" href="index.html">
+        <i class="fas fa-home"></i>
+    </a>
+    <h1>Playlists</h1>
+    <div id="playlists-view" class="playlists-grid"></div>
+
+    <!-- Playlist Creation Modal -->
+    <div id="playlist-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create Playlist</h2>
+            <input type="text" id="playlist-name" placeholder="Enter playlist name">
+            <div class="song-selection">
+                <h3>Select Songs</h3>
+                <div id="playlist-song-list"></div>
+            </div>
+            <button id="save-playlist">Save Playlist</button>
+        </div>
+    </div>
+
+    <script src="scripts/playlists.js"></script>
+</body>
+</html>

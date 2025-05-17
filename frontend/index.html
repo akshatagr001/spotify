@@ -22,16 +22,16 @@
             <span></span>
         </div>        
         <div class="menu-content">
-            <a href="#" class="menu-item" id="playlists-btn"><i class="fas fa-list"></i> Playlists</a>
+            <a href="/playlists.html" class="menu-item" id="playlists-btn"><i class="fas fa-list"></i> Playlists</a>
             <a href="https://spotify-backend-6mr0.onrender.com/download/setup" class="download-link">
                 <i class="fas fa-download"></i> Download App
             </a>
         </div>
     </div>
 
-    <button id="home-btn" class="home-button">
+    <a id="home-btn" class="home-button" href="index.html">
         <i class="fas fa-home"></i>
-    </button>
+    </a>
 
     <h1>🎵 My Spotify Clone 🎵</h1>
 
@@ -56,17 +56,6 @@
             <input type="text" id="search-input" placeholder="Search songs...">
             <button id="search-btn"><i class="fas fa-search"></i></button>
         </div>
-    </div>
-
-    <!-- Add Playlists View (initially hidden) -->
-    <div id="playlists-view" class="playlists-grid" style="display: none;">
-        <div class="playlist-card new-playlist" id="new-playlist-card">
-            <div class="plus-icon">
-                <i class="fas fa-plus"></i>
-            </div>
-            <span>Create Playlist</span>
-        </div>
-        <!-- Existing playlists will be added here dynamically -->
     </div>
 
     <div id="song-list"></div>
