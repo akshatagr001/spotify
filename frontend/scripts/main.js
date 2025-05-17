@@ -351,50 +351,66 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initialize recommendations
-    fetchRecommendations();
-});
-
-// Add this function
-function fetchRecommendations() {
-    fetch(`${API_URL}/api/recommendations`)
-        .then(response => response.json())
-        .then data => {
-            const recommendationsGrid = document.getElementById('recommendations-grid');
-            if (!recommendationsGrid) return;
-            
-            recommendationsGrid.innerHTML = '';
-            
-            // Get the first 10 recommendations
-            const recommendations = data.recommendations.slice(0, 10);
-            
-            recommendations.forEach(song => {
-                const div = document.createElement('div');
-                div.className = 'recommendation-item';
+    // Fix fetchRecommendations function
+    function fetchRecommendations() {
+        fetch(`${API_URL}/api/recommendations`)
+            .then(response => response.json())
+            .then(data => {  // Fix: Add missing parentheses and arrow function syntax
+                const recommendationsGrid = document.getElementById('recommendations-grid');
+                if (!recommendationsGrid) return;
                 
-                div.innerHTML = `
-                    <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" 
-                         alt="${song.title}">
-                    <div class="recommendation-info">
-                        <p class="recommendation-title">${song.title}</p>
-                        <p class="recommendation-plays">${song.play_count} plays</p>
-                    </div>
-                `;
+                recommendationsGrid.innerHTML = '';
                 
-                div.onclick = () => {
-                    const songIndex = allSongs.findIndex(s => s.name === song.name);
-                    if (songIndex !== -1) {
-                        playSong(songIndex);
-                    }
-                };
+                const recommendations = data.recommendations?.slice(0, 10) || [];
                 
-                recommendationsGrid.appendChild(div);
+                recommendations.forEach(song => {
+                    const div = document.createElement('div');
+                    div.className = 'recommendation-item';
+                    
+                    div.innerHTML = `
+                        <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" 
+                             alt="${song.title}">
+                        <div class="recommendation-info">
+                            <p class="recommendation-title">${song.title}</p>
+                            <p class="recommendation-plays">${song.play_count} plays</p>
+                        </div>
+                    `;
+                    
+                    div.addEventListener('click', () => {  // Fix: Use addEventListener instead of onclick
+                        const songIndex = allSongs.findIndex(s => s.name === song.name);
+                        if (songIndex !== -1) {
+                            playSong(songIndex);
+                        }
+                    });
+                    
+                    recommendationsGrid.appendChild(div);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching recommendations:', error);
             });
-        })
-        .catch(error => {
-            console.error('Error fetching recommendations:', error);
-        });
-}
+    }
+
+    // Add search functionality
+    searchInput?.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            if (searchTerm === '') {
+                songList = allSongs;
+            } else {
+                songList = allSongs.filter(song => 
+                    song.name.toLowerCase().includes(searchTerm)
+                );
+            }
+            renderSongList();
+        }, 300);
+    });
+
+    // Initialize
+    fetchRecommendations();
+    updateLastSession();
+});
 
 // Show/hide modal
 if (createPlaylistBtn) {
