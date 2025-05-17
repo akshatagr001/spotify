@@ -183,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize playlist button click handler
     if (playlistsBtn) {
         playlistsBtn.addEventListener('click', () => {
-            renderPlaylistCards();
             // Animate all playlist cards
             setTimeout(() => {
                 document.querySelectorAll('.playlist-fadein').forEach(card => {
@@ -192,30 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 10);
             // Close hamburger menu
             if (hamburgerMenu) hamburgerMenu.classList.remove('active');
-        });
-    }
-
-    // Initialize playlist selection
-    if (playlistSelect) {
-        playlistSelect.addEventListener('change', () => {
-            const selectedPlaylist = playlistSelect.value;
-            if (selectedPlaylist === '') {
-                songList = allSongs;
-            } else {
-                songList = playlists[selectedPlaylist] || [];
-            }
-            currentPlaylist = selectedPlaylist;
-            renderSongList();
-            hideContextMenu();
-        });
-    }
-
-    // Initialize hamburger menu close
-    if (hamburgerMenu) {
-        document.addEventListener('click', (e) => {
-            if (!hamburgerMenu.contains(e.target) && hamburgerMenu.classList.contains('active')) {
-                hamburgerMenu.classList.remove('active');
-            }
         });
     }
 
@@ -229,7 +204,6 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.json())
         .then(data => {
             playlists = data.playlists;
-            updatePlaylistSelect();
         })
         .catch(error => console.error('Error loading playlists:', error));
     
@@ -301,18 +275,6 @@ function fetchRecommendations() {
         });
 }
 
-// Fix: Only set up playlist controls if elements exist
-function updatePlaylistSelect() {
-    if (!playlistSelect) return;
-    playlistSelect.innerHTML = '<option value="">All Songs</option>';
-    Object.keys(playlists).forEach(playlistName => {
-        const option = document.createElement('option');
-        option.value = playlistName;
-        option.textContent = playlistName;
-        playlistSelect.appendChild(option);
-    });
-}
-
 // Show/hide modal
 if (createPlaylistBtn) {
     createPlaylistBtn.onclick = () => {
@@ -377,7 +339,6 @@ savePlaylistBtn.onclick = async () => {
 
         if (response.ok) {
             playlists[playlistName] = selectedSongs;
-            updatePlaylistSelect();
             playlistModal.style.display = 'none';
             playlistNameInput.value = '';
             alert('Playlist created successfully!');
@@ -608,20 +569,6 @@ function playNextSong() {
     }
 }
 
-// Handle playlist selection
-if (playlistSelect) {
-    playlistSelect.onchange = () => {
-        const selectedPlaylist = playlistSelect.value;
-        if (selectedPlaylist === '') {
-            songList = allSongs;
-        } else {
-            songList = playlists[selectedPlaylist] || [];
-        }
-        currentPlaylist = selectedPlaylist;
-        renderSongList();
-    };
-}
-
 // Keyboard controls
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && e.target === document.body) {
@@ -692,69 +639,6 @@ function isFullscreen() {
         document.mozFullScreenElement ||
         document.msFullscreenElement
     );
-}
-
-// Add function to render playlist cards
-function renderPlaylistCards() {
-    const playlistsView = document.getElementById('playlists-view');
-    const songListDiv = document.getElementById('song-list');
-    const lastSession = document.querySelector('.last-session');
-    const forYouSection = document.querySelector('.for-you-section');
-
-    // Hide other sections, show playlists grid
-    if (songListDiv) songListDiv.style.display = 'none';
-    if (lastSession) lastSession.style.display = 'none';
-    if (forYouSection) forYouSection.style.display = 'none';
-    playlistsView.style.display = 'grid';
-
-    // Clear playlists grid
-    playlistsView.innerHTML = '';
-
-    // Add new playlist card (always first)
-    const newPlaylistCard = document.createElement('div');
-    newPlaylistCard.className = 'playlist-card new-playlist playlist-fadein';
-    newPlaylistCard.innerHTML = `
-        <div class="plus-icon">
-            <i class="fas fa-plus"></i>
-        </div>
-        <span>Create Playlist</span>
-    `;
-    newPlaylistCard.onclick = () => {
-        playlistModal.style.display = 'block';
-        updatePlaylistSongList();
-    };
-    playlistsView.appendChild(newPlaylistCard);
-
-    // Fix: playlists is an object with playlistName: [songs]
-    Object.entries(playlists).forEach(([name, songs], idx) => {
-        // Defensive: skip if songs is not an array or empty
-        if (!Array.isArray(songs) || songs.length === 0) return;
-        const card = document.createElement('div');
-        card.className = 'playlist-card playlist-fadein';
-        // Use first song's image or default
-        const firstSong = songs[0];
-        const image = firstSong && firstSong.image ?
-            `${API_URL}/static/images/${firstSong.image}` :
-            'default.jpg';
-
-        card.innerHTML = `
-            <img src="${image}" alt="${name}">
-            <span>${name}</span>
-        `;
-
-        card.onclick = () => {
-            songList = songs;
-            currentPlaylist = name;
-            playlistsView.style.display = 'none';
-            if (songListDiv) songListDiv.style.display = 'grid';
-            if (lastSession) lastSession.style.display = 'block';
-            if (forYouSection) forYouSection.style.display = 'block';
-            renderSongList();
-        };
-
-        card.style.animationDelay = `${0.05 * (idx + 1)}s`;
-        playlistsView.appendChild(card);
-    });
 }
 
 // Auto-sync recently played every 2 seconds

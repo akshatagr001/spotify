@@ -5,8 +5,6 @@
     padding: 20px;
     max-width: 1400px;
     margin: 0 auto;
-    transition: opacity 0.3s;
-    opacity: 1;
 }
 
 .playlist-card {
@@ -14,7 +12,7 @@
     border-radius: 8px;
     padding: 0;
     cursor: pointer;
-    transition: transform 0.3s, opacity 0.3s, box-shadow 0.3s, background 0.3s, border 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -22,50 +20,18 @@
     height: 260px;
     min-height: 260px;
     position: relative;
-    opacity: 0;
-    transform: translateY(20px);
+    /* Remove initial opacity and transform - this was causing invisibility */
+    opacity: 1;
+    transform: none;
     border: 2px solid transparent;
 }
 
-.playlist-card:hover {
-    background: #1DB954 !important;
-    box-shadow: 0 8px 32px rgba(29,185,84,0.18);
-    transform: translateY(-6px) scale(1.03);
-    border: 2px solid #fff;
-}
-
-.playlist-card:hover span {
-    color: #fff !important;
-}
-
-.playlist-card:hover img {
-    filter: brightness(0.93) contrast(1.13);
-}
-
-.playlist-card.new-playlist {
-    background: #1DB954 !important;
-    border: 2px dashed #fff;
-    justify-content: center;
-    align-items: center;
-}
-
-.playlist-card.new-playlist .plus-icon {
-    font-size: 100px !important;
-    color: #fff !important;
-    margin-bottom: 10px;
-    transition: transform 0.2s;
-    line-height: 1;
-}
-
-.playlist-card.new-playlist:hover {
-    background: #17a74a !important;
-    border-color: #fff;
-    box-shadow: 0 8px 32px rgba(29,185,84,0.28);
-}
-
-.playlist-card.new-playlist:hover .plus-icon {
-    transform: scale(1.18) rotate(10deg);
-    color: #fff !important;
+.playlist-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px 8px 0 0;
+    transition: transform 0.3s ease;
 }
 
 .playlist-card span {
@@ -80,10 +46,43 @@
     letter-spacing: 0.5px;
 }
 
+/* Updated hover effects */
+.playlist-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 32px rgba(29,185,84,0.18);
+    background: #2a2a2a;
+    border-color: #1DB954;
+}
+
+/* Create Playlist card styles */
+.playlist-card.new-playlist {
+    background: #232323;
+    border: 2px dashed #1DB954;
+    justify-content: center;
+    align-items: center;
+}
+
+.playlist-card.new-playlist .plus-icon {
+    font-size: 80px;
+    color: #1DB954;
+    margin-bottom: 15px;
+    transition: transform 0.2s;
+}
+
+.playlist-card.new-playlist:hover {
+    background: #2a2a2a;
+    border-color: #1ed760;
+}
+
+.playlist-card.new-playlist:hover .plus-icon {
+    transform: scale(1.1);
+    color: #1ed760;
+}
+
 .playlist-card.new-playlist span {
     background: transparent;
-    color: #fff !important;
-    font-size: 20px;
+    color: #1DB954;
+    font-size: 18px;
     font-weight: bold;
     letter-spacing: 1px;
     margin-top: 0;
