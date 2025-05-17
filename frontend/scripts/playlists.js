@@ -8,11 +8,22 @@ let playlistSongList = document.getElementById('playlist-song-list');
 let savePlaylistBtn = document.getElementById('save-playlist');
 let closeModal = document.querySelector('.close');
 
+// Fetch playlists from database and render cards
+function fetchAndRenderPlaylists() {
+    fetch(`${API_URL}/playlists`)
+        .then(response => response.json())
+        .then(data => {
+            playlists = data.playlists || {};
+            renderPlaylistCards();
+        })
+        .catch(error => console.error('Error loading playlists:', error));
+}
+
 function renderPlaylistCards() {
     const playlistsView = document.getElementById('playlists-view');
     playlistsView.innerHTML = '';
 
-    // Add new playlist card (always first)
+    // Create Playlist button (always first)
     const newPlaylistCard = document.createElement('div');
     newPlaylistCard.className = 'playlist-card new-playlist playlist-fadein';
     newPlaylistCard.innerHTML = `
@@ -27,6 +38,7 @@ function renderPlaylistCards() {
     };
     playlistsView.appendChild(newPlaylistCard);
 
+    // Render playlists from database
     Object.entries(playlists).forEach(([name, songs], idx) => {
         if (!Array.isArray(songs) || songs.length === 0) return;
         const card = document.createElement('div');
@@ -88,8 +100,8 @@ if (savePlaylistBtn) {
                 body: JSON.stringify({ songs: selectedSongs })
             });
             if (response.ok) {
-                playlists[playlistName] = selectedSongs;
-                renderPlaylistCards();
+                // Refresh playlists from database after creation
+                fetchAndRenderPlaylists();
                 playlistModal.style.display = 'none';
                 playlistNameInput.value = '';
                 alert('Playlist created successfully!');
@@ -116,14 +128,7 @@ if (window && playlistModal) {
     };
 }
 
-fetch(`${API_URL}/playlists`)
-    .then(response => response.json())
-    .then(data => {
-        playlists = data.playlists;
-        renderPlaylistCards();
-    })
-    .catch(error => console.error('Error loading playlists:', error));
-
+// Fetch all songs for playlist creation
 fetch(`${API_URL}/songs`)
     .then(response => response.json())
     .then(data => {
@@ -136,3 +141,6 @@ fetch(`${API_URL}/songs`)
     .catch(error => {
         allSongs = [];
     });
+
+// Initial fetch and render of playlists
+fetchAndRenderPlaylists();
