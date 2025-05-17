@@ -3,8 +3,9 @@
 }
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background: linear-gradient(to bottom, #1e1e1e, #121212);
-    color: white;
+    background: linear-gradient(to bottom, #111111, #000000); /* darker background */
+    color: #fff;
+    font-weight: bold;
     text-align: center;
     padding: 20px;
     margin: 0;
@@ -17,6 +18,12 @@ h1 {
     margin-bottom: 30px;
     color: #1DB954;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+h1, h2, h3, h4, h5, h6, label, .recommendation-title, .recommendation-plays, .track-name, .last-played, .download-link, .menu-item, .playlist-card span, .plus-icon, .recommendation-info, .recommendation-item span, .session-tracks button span {
+    font-weight: bold !important;
+    color: #fff !important;
+    letter-spacing: 0.5px;
 }
 
 /* Song Grid Layout */
@@ -609,6 +616,74 @@ h1 {
     pointer-events: all;
 }
 
+/* For You Section and Last Session Section common styles */
+.for-you-section, .last-session {
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 1400px;
+}
+
+.for-you-section h2, .last-session h2 {
+    text-align: left;
+    color: #fff;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+/* For You Section */
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(2, 60px);
+    gap: 15px;
+    margin-bottom: 40px;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.recommendation-item {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    background: #282828;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.recommendation-item img, .session-tracks button img {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    object-fit: cover;
+}
+
+.recommendation-info, .session-tracks button span {
+    padding: 10px 15px;
+    flex-grow: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recommendation-title {
+    font-size: 14px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recommendation-plays {
+    font-size: 12px;
+    color: #b3b3b3;
+    margin: 4px 0 0;
+}
+
 /* Light Theme Styles */
 body.light-theme {
     background: linear-gradient(to bottom, #ffffff, #f0f0f0);
@@ -643,101 +718,6 @@ body.light-theme #search-input {
 body.light-theme #search-btn {
     background: #1DB954;
     color: white;
-}
-
-/* Sliding tab for recommended songs */
-.recommended-songs {
-    margin-top: 10px;
-    overflow: hidden;
-    white-space: nowrap;
-    background-color: #282828;
-    padding: 20px 40px;
-    position: relative;
-    min-height: 320px;
-}
-
-.recommended-songs .sliding-tab {
-    display: flex;
-    gap: 25px;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    padding: 10px 0;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-.recommended-songs .sliding-tab::-webkit-scrollbar {
-    display: none;  /* Hide scrollbar Chrome, Safari and Opera */
-}
-
-.recommended-songs .song {
-    flex: 0 0 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0;
-    background-color: #282828;
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-height: 260px;
-    position: relative;
-    overflow: hidden;
-}
-
-.recommended-songs .song img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    border-radius: 8px 8px 0 0;
-    transition: transform 0.3s ease;
-}
-
-.recommended-songs .song span {
-    color: white;
-    font-size: 16px;
-    padding: 15px 10px;
-    text-align: center;
-    width: 100%;
-    background: rgba(40, 40, 40, 0.95);
-    margin-top: auto;
-    white-space: normal;
-    min-height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.recommended-songs .song:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-    background: #383838;
-}
-
-.recommended-songs .song:hover img {
-    transform: scale(1.05);
-}
-
-#slide-left, #slide-right {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border: none;
-    padding: 20px 15px;
-    cursor: pointer;
-    z-index: 2;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-#slide-left { left: 0; }
-#slide-right { right: 0; }
-
-#slide-left:hover, #slide-right:hover {
-    background: rgba(29, 185, 84, 0.8);
 }
 
 /* Dark theme styles */
@@ -788,11 +768,13 @@ body.dark-theme #theme-toggle {
 
 /* Hamburger Menu */
 .hamburger-menu {
-    position: fixed;
+    position: absolute;
     top: 20px;
     left: 20px;
-    z-index: 1000;
-    width: 100%;
+    z-index: 10;
+    width: auto;
+    background: none;
+    box-shadow: none;
 }
 
 .menu-lines {
@@ -823,6 +805,7 @@ body.dark-theme #theme-toggle {
     overflow: hidden;
     transition: max-height 0.3s ease, padding 0.3s ease;
     opacity: 0;
+    width: 200px;
 }
 
 .hamburger-menu.active .menu-content {
@@ -843,6 +826,83 @@ body.dark-theme #theme-toggle {
     transform: rotate(-45deg) translate(6px, -6px);
 }
 
+.menu-item {
+    color: white;
+    text-decoration: none;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.3s ease;
+}
+
+.menu-item:hover {
+    background: rgba(29, 185, 84, 0.1);
+}
+
+.menu-item i {
+    color: #1DB954;
+}
+
+/* Last Session Section */
+.last-session {
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 1400px;
+}
+
+.last-session h2 {
+    text-align: left;
+    color: #fff;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.session-tracks {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.session-track {
+    flex: 0 0 200px;
+    background: #282828;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.session-track:hover {
+    transform: translateY(-5px);
+    background: #383838;
+}
+
+.session-track img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.session-track .track-info {
+    padding: 12px;
+    text-align: left;
+}
+
+.session-track .track-name {
+    font-size: 14px;
+    color: white;
+    margin: 0;
+}
+
+.session-track .last-played {
+    font-size: 12px;
+    color: #b3b3b3;
+    margin: 5px 0 0;
+}
+
 .download-link {
     color: #1DB954;
     text-decoration: none;
@@ -856,3 +916,107 @@ body.dark-theme #theme-toggle {
 .download-link:hover {
     background-color: rgba(29, 185, 84, 0.1);
 }
+
+/* Playlists Grid */
+.playlists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 25px;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.playlist-card {
+    background: #282828;
+    border-radius: 8px;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 260px;
+    position: relative;
+}
+
+.playlist-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px 8px 0 0;
+}
+
+.playlist-card span {
+    color: white;
+    font-size: 16px;
+    padding: 15px;
+    text-align: center;
+    background: rgba(40, 40, 40, 0.95);
+    width: 100%;
+    margin-top: auto;
+}
+
+.playlist-card:hover {
+    transform: translateY(-5px);
+    background: #383838;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.new-playlist {
+    border: 2px dashed #1DB954;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: rgba(29, 185, 84, 0.1);
+}
+
+.plus-icon {
+    font-size: 48px;
+    color: #1DB954;
+    margin-bottom: 15px;
+}
+
+.new-playlist:hover {
+    background: rgba(29, 185, 84, 0.2);
+    border-color: #1ed760;
+}
+
+/* Home Button */
+.home-button {
+    position: absolute;
+    top: 12px;
+    left: 70px;
+    z-index: 10;
+    background: transparent;
+    border: none;
+    color: #1DB954;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 10px;
+    transition: transform 0.3s ease;
+}
+
+.home-button:hover {
+    transform: scale(1.1);
+    color: #1ed760;
+}
+
+.content-row {
+    display: flex;
+    gap: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.last-session, .for-you-section {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+    grid-template-rows: 10fr;
+    max-width: 100%;
+}
+
+/* ...existing code... */

@@ -1,3 +1,19 @@
+// Global state variables
+let contextMenu = null;
+let currentContextSong = null;
+let playlists = {};
+let currentPlaylist = null;
+let allSongs = [];
+let filteredSongs = [];
+let songList = [];
+let currentIndex = 0;
+let currentButton = null;
+let shuffleMode = false;
+let isDragging = false;
+let wasPlaying = false;
+let searchTimeout;
+
+// DOM element selections - moved all together
 const songListDiv = document.getElementById('song-list');
 const audioPlayer = document.getElementById('audio-player');
 const playPauseBtn = document.getElementById('play-pause');
@@ -12,11 +28,54 @@ const nowPlayingImg = document.getElementById('now-playing-img');
 const nowPlayingTitle = document.getElementById('now-playing-title');
 const searchInput = document.getElementById('search-input');
 const searchBtn = document.getElementById('search-btn');
+const playlistSelect = document.getElementById('playlist-select');
+const createPlaylistBtn = document.getElementById('create-playlist-btn');
+const playlistModal = document.getElementById('playlist-modal');
+const closeModal = document.querySelector('.close');
+const playlistNameInput = document.getElementById('playlist-name');
+const playlistSongList = document.getElementById('playlist-song-list');
+const savePlaylistBtn = document.getElementById('save-playlist');
+
+// Network configuration
+const API_URL = `https://spotify-backend-6mr0.onrender.com`;
+
+// Function declarations - move before usage
+function updateLastSession() {
+    fetch(`${API_URL}/recently-played`)
+        .then(response => response.json())
+        .then(data => {
+            const lastSessionTracks = document.getElementById('last-session-tracks');
+            if (!lastSessionTracks) return;
+            
+            lastSessionTracks.innerHTML = '';
+            if (Array.isArray(data.recently_played) && data.recently_played.length > 0) {
+                // Limit to 25 songs
+                data.recently_played.slice(0, 25).forEach(song => {
+                    const btn = document.createElement('button');
+                    const img = document.createElement('img');
+                    const text = document.createElement('span');
+                    
+                    img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
+                    img.alt = song.name;
+                    
+                    text.innerText = song.name.replace(/\.(mp3|m4a)$/, '');
+                    
+                    btn.appendChild(img);
+                    btn.appendChild(text);
+                    btn.onclick = () => playSong(allSongs.findIndex(s => s.name === song.name));
+                    
+                    lastSessionTracks.appendChild(btn);
+                });
+            } else {
+                lastSessionTracks.innerHTML = '<p style="color:#b3b3b3;">No recently played songs</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching last session:', error);
+        });
+}
 
 // Progress bar interaction
-let isDragging = false;
-let wasPlaying = false;
-
 progressBar.addEventListener('click', (e) => {
     const bounds = progressBar.getBoundingClientRect();
     const x = e.clientX - bounds.left;
@@ -107,42 +166,153 @@ audioPlayer.addEventListener('loadedmetadata', () => {
     durationEl.textContent = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
 });
 
-// Add playlist-related DOM elements
-const createPlaylistBtn = document.getElementById('create-playlist-btn');
-const playlistSelect = document.getElementById('playlist-select');
-const playlistModal = document.getElementById('playlist-modal');
-const closeModal = document.querySelector('.close');
-const playlistNameInput = document.getElementById('playlist-name');
-const playlistSongList = document.getElementById('playlist-song-list');
-const savePlaylistBtn = document.getElementById('save-playlist');
+// Wrap all playlist-related code in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    const hamburgerMenu = document.querySelector('.hamburger-menu');
+    const menuLines = document.querySelector('.menu-lines');
+    const playlistsBtn = document.getElementById('playlists-btn');
+    const lastSessionTracks = document.getElementById('last-session-tracks');
 
-// Network configuration
-const API_URL = `https://spotify-backend-6mr0.onrender.com`; // Use current hostname
+    // Initialize hamburger menu
+    if (menuLines && hamburgerMenu) {
+        menuLines.addEventListener('click', () => {
+            hamburgerMenu.classList.toggle('active');
+        });
+    }
 
-let allSongs = []; // Store all songs
-let filteredSongs = []; // Store filtered songs
-let songList = []; // Add this line to declare songList
-let currentIndex = 0;
-let currentButton = null;
-let shuffleMode = false;
+    // Initialize playlist button click handler
+    if (playlistsBtn) {
+        playlistsBtn.addEventListener('click', () => {
+            const playlistsView = document.getElementById('playlists-view');
+            const songList = document.getElementById('song-list');
+            const lastSession = document.querySelector('.last-session');
+            const forYouSection = document.querySelector('.for-you-section');
+            
+            // Hide main sections
+            songList.style.display = 'none';
+            lastSession.style.display = 'none';
+            forYouSection.style.display = 'none';
+            
+            // Show playlists
+            playlistsView.style.display = 'grid';
+            
+            // Render playlists
+            renderPlaylistCards();
+            
+            // Close hamburger menu
+            if (hamburgerMenu) hamburgerMenu.classList.remove('active');
+        });
+    }
 
-// Network configuration
+    // Initialize playlist selection
+    if (playlistSelect) {
+        playlistSelect.addEventListener('change', () => {
+            const selectedPlaylist = playlistSelect.value;
+            if (selectedPlaylist === '') {
+                songList = allSongs;
+            } else {
+                songList = playlists[selectedPlaylist] || [];
+            }
+            currentPlaylist = selectedPlaylist;
+            renderSongList();
+            hideContextMenu();
+        });
+    }
 
-// Playlist management
-let playlists = {};
-let currentPlaylist = null;
+    // Initialize hamburger menu close
+    if (hamburgerMenu) {
+        document.addEventListener('click', (e) => {
+            if (!hamburgerMenu.contains(e.target) && hamburgerMenu.classList.contains('active')) {
+                hamburgerMenu.classList.remove('active');
+            }
+        });
+    }
 
-// Load playlists when the app starts
-fetch(`${API_URL}/playlists`)
-    .then(response => response.json())
-    .then(data => {
-        playlists = data.playlists;
-        updatePlaylistSelect();
-    })
-    .catch(error => console.error('Error loading playlists:', error));
+    // Initialize last session
+    if (lastSessionTracks) {
+        updateLastSession();
+    }
 
-// Update playlist dropdown
+    // Load playlists
+    fetch(`${API_URL}/playlists`)
+        .then(response => response.json())
+        .then(data => {
+            playlists = data.playlists;
+            updatePlaylistSelect();
+        })
+        .catch(error => console.error('Error loading playlists:', error));
+    
+    // Add home button functionality
+    const homeBtn = document.getElementById('home-btn');
+    if (homeBtn) {
+        homeBtn.addEventListener('click', () => {
+            const playlistsView = document.getElementById('playlists-view');
+            const songList = document.getElementById('song-list');
+            const lastSession = document.querySelector('.last-session');
+            const forYouSection = document.querySelector('.for-you-section');
+            
+            // Show main sections
+            songList.style.display = 'grid';
+            lastSession.style.display = 'block';
+            forYouSection.style.display = 'block';
+            
+            // Hide playlists
+            playlistsView.style.display = 'none';
+            
+            currentPlaylist = null;
+            songList = allSongs;
+            renderSongList();
+        });
+    }
+
+    // Initialize recommendations
+    fetchRecommendations();
+});
+
+// Add this function
+function fetchRecommendations() {
+    fetch(`${API_URL}/api/recommendations`)
+        .then(response => response.json())
+        .then(data => {
+            const recommendationsGrid = document.getElementById('recommendations-grid');
+            if (!recommendationsGrid) return;
+            
+            recommendationsGrid.innerHTML = '';
+            
+            // Get the first 10 recommendations
+            const recommendations = data.recommendations.slice(0, 10);
+            
+            recommendations.forEach(song => {
+                const div = document.createElement('div');
+                div.className = 'recommendation-item';
+                
+                div.innerHTML = `
+                    <img src="${song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg'}" 
+                         alt="${song.title}">
+                    <div class="recommendation-info">
+                        <p class="recommendation-title">${song.title}</p>
+                        <p class="recommendation-plays">${song.play_count} plays</p>
+                    </div>
+                `;
+                
+                div.onclick = () => {
+                    const songIndex = allSongs.findIndex(s => s.name === song.name);
+                    if (songIndex !== -1) {
+                        playSong(songIndex);
+                    }
+                };
+                
+                recommendationsGrid.appendChild(div);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching recommendations:', error);
+        });
+}
+
+// Fix: Only set up playlist controls if elements exist
 function updatePlaylistSelect() {
+    if (!playlistSelect) return;
     playlistSelect.innerHTML = '<option value="">All Songs</option>';
     Object.keys(playlists).forEach(playlistName => {
         const option = document.createElement('option');
@@ -153,20 +323,24 @@ function updatePlaylistSelect() {
 }
 
 // Show/hide modal
-createPlaylistBtn.onclick = () => {
-    playlistModal.style.display = 'block';
-    updatePlaylistSongList();
-};
-
-closeModal.onclick = () => {
-    playlistModal.style.display = 'none';
-};
-
-window.onclick = (event) => {
-    if (event.target === playlistModal) {
+if (createPlaylistBtn) {
+    createPlaylistBtn.onclick = () => {
+        playlistModal.style.display = 'block';
+        updatePlaylistSongList();
+    };
+}
+if (closeModal) {
+    closeModal.onclick = () => {
         playlistModal.style.display = 'none';
-    }
-};
+    };
+}
+if (window && playlistModal) {
+    window.onclick = (event) => {
+        if (event.target === playlistModal) {
+            playlistModal.style.display = 'none';
+        }
+    };
+}
 
 // Update song list in modal
 function updatePlaylistSongList() {
@@ -284,7 +458,6 @@ function performSearch() {
 }
 
 // Debounce search for better performance
-let searchTimeout;
 searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(performSearch, 300);
@@ -336,7 +509,12 @@ function playSong(index) {
     // Track user activity
     fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
         method: 'POST'
-    }).catch(error => console.error('Error tracking activity:', error));
+    })
+    .then(() => {
+        updateLastSession();
+        fetchRecommendations(); // Refresh recommendations
+    })
+    .catch(error => console.error('Error tracking activity:', error));
     
     // Update UI
     if (currentButton) currentButton.classList.remove('active');
@@ -440,16 +618,18 @@ function playNextSong() {
 }
 
 // Handle playlist selection
-playlistSelect.onchange = () => {
-    const selectedPlaylist = playlistSelect.value;
-    if (selectedPlaylist === '') {
-        songList = allSongs;
-    } else {
-        songList = playlists[selectedPlaylist] || [];
-    }
-    currentPlaylist = selectedPlaylist;
-    renderSongList();
-};
+if (playlistSelect) {
+    playlistSelect.onchange = () => {
+        const selectedPlaylist = playlistSelect.value;
+        if (selectedPlaylist === '') {
+            songList = allSongs;
+        } else {
+            songList = playlists[selectedPlaylist] || [];
+        }
+        currentPlaylist = selectedPlaylist;
+        renderSongList();
+    };
+}
 
 // Keyboard controls
 document.addEventListener('keydown', (e) => {
@@ -469,6 +649,17 @@ document.addEventListener('keydown', (e) => {
     } else if (e.code === 'F11') {
         e.preventDefault();
         toggleFullScreen();
+    } else if (e.code === 'Escape') {
+        const playlistsView = document.getElementById('playlists-view');
+        const songList = document.getElementById('song-list');
+        
+        if (playlistsView.style.display === 'grid') {
+            playlistsView.style.display = 'none';
+            songList.style.display = 'grid';
+            currentPlaylist = null;
+            songList = allSongs;
+            renderSongList();
+        }
     }
 });
 
@@ -512,260 +703,55 @@ function isFullscreen() {
     );
 }
 
-// Add context menu-related variables
-let contextMenu = null;
-let currentContextSong = null;
-
-function showContextMenu(e, song) {
-    e.preventDefault();
-    e.stopPropagation();
+// Add function to render playlist cards
+function renderPlaylistCards() {
+    const playlistsView = document.getElementById('playlists-view');
     
-    // Hide existing menu if any
-    if (contextMenu) {
-        document.body.removeChild(contextMenu);
-    }
+    // Keep only the new playlist card
+    playlistsView.innerHTML = '';
     
-    currentContextSong = song;
-    
-    // Create new menu
-    contextMenu = document.createElement('div');
-    contextMenu.className = 'context-menu';
-    
-    // Calculate position
-    const clickX = e.clientX;
-    const clickY = e.clientY;
-    const screenW = window.innerWidth;
-    const screenH = window.innerHeight;
-    
-    // Add menu items
-    const addToPlaylistItem = document.createElement('div');
-    addToPlaylistItem.className = 'context-menu-item has-submenu';
-    addToPlaylistItem.innerHTML = '<i class="fas fa-plus"></i>Add to Playlist<i class="fas fa-chevron-right submenu-arrow"></i>';
-    
-    const submenu = document.createElement('div');
-    submenu.className = 'context-submenu';
-    
-    // New playlist option
-    const newPlaylistItem = document.createElement('div');
-    newPlaylistItem.className = 'context-menu-item';
-    newPlaylistItem.innerHTML = '<i class="fas fa-music"></i>Create New Playlist';
-    newPlaylistItem.onclick = () => {
-        hideContextMenu();
+    // Add new playlist card
+    const newPlaylistCard = document.createElement('div');
+    newPlaylistCard.className = 'playlist-card new-playlist';
+    newPlaylistCard.innerHTML = `
+        <div class="plus-icon">
+            <i class="fas fa-plus"></i>
+        </div>
+        <span>Create Playlist</span>
+    `;
+    newPlaylistCard.onclick = () => {
         playlistModal.style.display = 'block';
         updatePlaylistSongList();
-        // Pre-select the current song
-        const checkbox = Array.from(playlistSongList.querySelectorAll('input[type="checkbox"]'))
-            .find(cb => cb.value === currentContextSong.name);
-        if (checkbox) checkbox.checked = true;
     };
-    submenu.appendChild(newPlaylistItem);
+    playlistsView.appendChild(newPlaylistCard);
     
-    // Add separator if there are playlists
-    if (Object.keys(playlists).length > 0) {
-        const separator = document.createElement('div');
-        separator.className = 'context-menu-separator';
-        submenu.appendChild(separator);
+    // Add existing playlists
+    Object.entries(playlists).forEach(([name, songs]) => {
+        const card = document.createElement('div');
+        card.className = 'playlist-card';
         
-        // Add existing playlists
-        Object.keys(playlists).forEach(playlistName => {
-            const playlistItem = document.createElement('div');
-            playlistItem.className = 'context-menu-item';
-            playlistItem.innerHTML = `<i class="fas fa-list"></i>${playlistName}`;
-            playlistItem.onclick = () => addSongToPlaylist(playlistName, currentContextSong);
-            submenu.appendChild(playlistItem);
-        });
-    }
-    
-    addToPlaylistItem.appendChild(submenu);
-    contextMenu.appendChild(addToPlaylistItem);
-    
-    // Add "Remove from Playlist" option if in a playlist
-    if (currentPlaylist) {
-        const separator = document.createElement('div');
-        separator.className = 'context-menu-separator';
-        contextMenu.appendChild(separator);
-        
-        const removeItem = document.createElement('div');
-        removeItem.className = 'context-menu-item';
-        removeItem.innerHTML = '<i class="fas fa-minus"></i>Remove from Playlist';
-        removeItem.onclick = () => removeSongFromPlaylist(currentPlaylist, currentContextSong);
-        contextMenu.appendChild(removeItem);
-    }
-    
-    // Add to DOM
-    document.body.appendChild(contextMenu);
-    
-    // Position the menu
-    const menuRect = contextMenu.getBoundingClientRect();
-    let menuX = clickX;
-    let menuY = clickY;
-    
-    if (menuX + menuRect.width > screenW) {
-        menuX = screenW - menuRect.width;
-    }
-    
-    if (menuY + menuRect.height > screenH) {
-        menuY = screenH - menuRect.height;
-    }
-    
-    contextMenu.style.left = menuX + 'px';
-    contextMenu.style.top = menuY + 'px';
-    
-    // Show the menu with animation
-    requestAnimationFrame(() => {
-        contextMenu.classList.add('active');
-    });
-    
-    // Handle clicks outside
-    const closeContextMenu = (e) => {
-        if (!contextMenu.contains(e.target)) {
-            hideContextMenu();
-            document.removeEventListener('click', closeContextMenu);
-            document.removeEventListener('contextmenu', closeContextMenu);
-        }
-    };
-    
-    document.addEventListener('click', closeContextMenu);
-    document.addEventListener('contextmenu', closeContextMenu);
-}
-
-function hideContextMenu() {
-    if (contextMenu && contextMenu.parentNode) {
-        contextMenu.classList.remove('active');
-        setTimeout(() => {
-            if (contextMenu && contextMenu.parentNode) {
-                contextMenu.parentNode.removeChild(contextMenu);
-                contextMenu = null;
-            }
-        }, 200);
-    }
-}
-
-// Add song to playlist
-async function addSongToPlaylist(playlistName, song) {
-    const playlist = playlists[playlistName] || [];
-    if (!playlist.find(s => s.name === song.name)) {
-        playlist.push(song);
-        playlists[playlistName] = playlist;
-        
-        try {
-            await fetch(`${API_URL}/playlists/${encodeURIComponent(playlistName)}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ songs: playlist })
-            });
+        // Use first song's image or default
+        const firstSong = songs[0];
+        const image = firstSong?.image ? 
+            `${API_URL}/static/images/${firstSong.image}` : 
+            'default.jpg';
             
-            alert(`Added "${song.name}" to playlist "${playlistName}"`);
-        } catch (error) {
-            console.error('Error updating playlist:', error);
-            alert('Error updating playlist');
-        }
-    }
-    hideContextMenu();
-}
-
-// Remove song from playlist
-async function removeSongFromPlaylist(playlistName, song) {
-    const playlist = playlists[playlistName] || [];
-    const updatedPlaylist = playlist.filter(s => s.name !== song.name);
-    playlists[playlistName] = updatedPlaylist;
-    
-    try {
-        await fetch(`${API_URL}/playlists/${encodeURIComponent(playlistName)}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ songs: updatedPlaylist })
-        });
+        card.innerHTML = `
+            <img src="${image}" alt="${name}">
+            <span>${name}</span>
+        `;
         
-        // Update display if we're viewing the playlist
-        if (currentPlaylist === playlistName) {
-            songList = updatedPlaylist;
+        card.onclick = () => {
+            songList = songs;
+            currentPlaylist = name;
+            
+            // Switch back to song list view
+            playlistsView.style.display = 'none';
+            document.getElementById('song-list').style.display = 'grid';
+            
             renderSongList();
-        }
+        };
         
-        alert(`Removed "${song.name}" from playlist "${playlistName}"`);
-    } catch (error) {
-        console.error('Error updating playlist:', error);
-        alert('Error updating playlist');
-    }
-    hideContextMenu();
-}
-
-// Hide context menu when switching views
-playlistSelect.addEventListener('change', hideContextMenu);
-searchInput.addEventListener('input', hideContextMenu);
-
-// Hamburger Menu functionality
-document.addEventListener('DOMContentLoaded', () => {
-    const hamburgerMenu = document.querySelector('.hamburger-menu');
-    const menuLines = document.querySelector('.menu-lines');
-
-    menuLines.addEventListener('click', () => {
-        hamburgerMenu.classList.toggle('active');
+        playlistsView.appendChild(card);
     });
-
-    // Close menu when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!hamburgerMenu.contains(e.target) && hamburgerMenu.classList.contains('active')) {
-            hamburgerMenu.classList.remove('active');
-        }
-    });
-});
-
-
-function fetchRecommendations() {
-    console.log('Fetching recommendations from:', `${API_URL}/api/recommendations`);
-    fetch(`${API_URL}/api/recommendations`)
-        .then(response => {
-            console.log('Response status:', response.status);
-            if (!response.ok) {
-                throw new Error('Failed to fetch recommendations');
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Received data:', data);
-            if (!Array.isArray(data.recommendations)) {
-                throw new Error('Invalid recommendations format');
-            }
-            const slidingTab = document.getElementById('sliding-tab');
-            slidingTab.innerHTML = '';
-            data.recommendations.forEach(song => {
-                console.log('Adding song to UI:', song.title);
-                const songDiv = document.createElement('div');
-                songDiv.className = 'song';
-                
-                // Create and append image
-                const img = document.createElement('img');
-                img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
-                img.alt = song.title;
-                songDiv.appendChild(img);
-                
-                // Add song title
-                const titleSpan = document.createElement('span');
-                titleSpan.textContent = song.title;
-                songDiv.appendChild(titleSpan);
-                
-                // Add click handler to play the song
-                songDiv.addEventListener('click', () => {
-                    const songIndex = allSongs.findIndex(s => s.name === song.name);
-                    if (songIndex !== -1) {
-                        playSong(songIndex);
-                    }
-                });
-                
-                slidingTab.appendChild(songDiv);
-            });
-        })
-        .catch(error => {
-            console.error('Error fetching recommendations:', error);
-        });
 }
-
-// Fetch recommendations periodically
-setInterval(fetchRecommendations, 60000); // Update every 60 seconds
-fetchRecommendations(); // Initial fetch

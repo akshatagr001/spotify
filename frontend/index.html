@@ -22,25 +22,51 @@
             <span></span>
         </div>        
         <div class="menu-content">
-            <a href="https://spotify-backend-6mr0.onrender.com/download/setup" class="download-link">Download App</a>
+            <a href="#" class="menu-item" id="playlists-btn"><i class="fas fa-list"></i> Playlists</a>
+            <a href="https://spotify-backend-6mr0.onrender.com/download/setup" class="download-link">
+                <i class="fas fa-download"></i> Download App
+            </a>
         </div>
     </div>
 
+    <button id="home-btn" class="home-button">
+        <i class="fas fa-home"></i>
+    </button>
+
     <h1>🎵 My Spotify Clone 🎵</h1>
+
+    <!-- For You Section -->
+    <div class="for-you-section">
+        <h2>For You</h2>
+        <div class="recommendations-grid" id="recommendations-grid">
+            <!-- Recommended songs will be added here dynamically -->
+        </div>
+    </div>
+
+    <!-- Last Session Section -->
+    <div class="last-session">
+        <h2>Last Session</h2>
+        <div class="session-tracks" id="last-session-tracks">
+            <!-- Last played tracks will be added here dynamically -->
+        </div>
+    </div>
 
     <div class="top-controls">
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Search songs...">
             <button id="search-btn"><i class="fas fa-search"></i></button>
         </div>
-        <div class="playlist-controls">
-            <button id="create-playlist-btn" title="Create New Playlist">
-                <i class="fas fa-plus"></i> New Playlist
-            </button>
-            <select id="playlist-select" title="Select Playlist">
-                <option value="">All Songs</option>
-            </select>
+    </div>
+
+    <!-- Add Playlists View (initially hidden) -->
+    <div id="playlists-view" class="playlists-grid" style="display: none;">
+        <div class="playlist-card new-playlist" id="new-playlist-card">
+            <div class="plus-icon">
+                <i class="fas fa-plus"></i>
+            </div>
+            <span>Create Playlist</span>
         </div>
+        <!-- Existing playlists will be added here dynamically -->
     </div>
 
     <div id="song-list"></div>
@@ -93,33 +119,9 @@
         </div>
     </div>
 
-    <!-- Recommended Songs Section -->
-    <div class="recommended-songs">
-        <h3>Recommended Songs</h3>
-        <div class="sliding-tab" id="sliding-tab">
-            <!-- Songs will be dynamically added here -->
-        </div>
-        <button id="slide-left">&#9664;</button>
-        <button id="slide-right">&#9654;</button>
-    </div>
-
     <audio id="audio-player"></audio>
 
     <!-- Scripts -->
     <script src="scripts/main.js"></script>
-    <script>
-        // JavaScript for sliding tab
-        const slidingTab = document.getElementById('sliding-tab');
-        const slideLeft = document.getElementById('slide-left');
-        const slideRight = document.getElementById('slide-right');
-
-        slideLeft.addEventListener('click', () => {
-            slidingTab.scrollBy({ left: -200, behavior: 'smooth' });
-        });
-
-        slideRight.addEventListener('click', () => {
-            slidingTab.scrollBy({ left: 200, behavior: 'smooth' });
-        });
-    </script>
 </body>
 </html>

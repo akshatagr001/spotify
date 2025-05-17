@@ -163,14 +163,14 @@ async def delete_playlist(playlist_name: str):
 @app.post("/track-activity/{song_name}")
 async def track_activity(song_name: str):
     try:
-        # Update or create activity record
+        # Always update or create activity record for recently played
         activity = await UserActivity.get_or_none(song_name=song_name)
         if activity:
             activity.play_count += 1
             activity.last_played = datetime.now()
             await activity.save()
         else:
-            await UserActivity.create(song_name=song_name)
+            await UserActivity.create(song_name=song_name, play_count=1, last_played=datetime.now())
         return {"message": "Activity tracked successfully"}
     except Exception as e:
         logger.error(f"Error tracking activity: {e}")
@@ -257,6 +257,39 @@ async def download_setup():
         status_code=404,
         content={"error": "Setup file not found"}
     )
+
+@app.get("/recently-played")
+async def recently_played():
+    try:
+        # Get up to 25 most recently played songs
+        activities = await UserActivity.all()
+        activities = sorted(
+            activities,
+            key=lambda x: x.last_played if x.last_played else datetime.min,
+            reverse=True
+        )[:25]
+
+        # Get image data
+        images = {os.path.splitext(image)[0].upper(): image
+                  for image in os.listdir(IMAGES_FOLDER)
+                  if image.lower().endswith((".jpg", ".jpeg", ".png"))}
+
+        recently_played = []
+        for activity in activities:
+            song_name = os.path.splitext(activity.song_name)[0].upper()
+            image = images.get(song_name, "default.jpg")
+            recently_played.append({
+                "name": activity.song_name,
+                "image": image,
+                "last_played": activity.last_played.isoformat() if activity.last_played else None,
+                "play_count": activity.play_count
+            })
+
+        return {"recently_played": recently_played}
+    except Exception as e:
+        logger.error(f"Error fetching recently played: {e}")
+        return {"recently_played": [], "error": str(e)}
+
 # Initialize Tortoise ORM
 register_tortoise(
     app,
