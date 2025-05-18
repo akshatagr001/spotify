@@ -342,18 +342,39 @@ document.addEventListener('DOMContentLoaded', () => {
             const button = document.createElement('button');
             const img = document.createElement('img');
             const span = document.createElement('span');
+            const actionsIcon = document.createElement('div');
 
             img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
             img.alt = song.name;
             img.onerror = () => img.src = 'default.jpg';
 
             span.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
-
+            
+            actionsIcon.className = 'song-actions';
+            actionsIcon.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
+            
             button.appendChild(img);
             button.appendChild(span);
+            button.appendChild(actionsIcon);
             
-            // Safe event binding
-            button.addEventListener('click', () => playSong(index));
+            // Safe event binding for playing song
+            button.addEventListener('click', (e) => {
+                // Don't play if clicking on the actions button
+                if (e.target.closest('.song-actions')) return;
+                playSong(index);
+            });
+            
+            // Add context menu for adding to playlist
+            button.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showContextMenu(e, song);
+            });
+            
+            // Add click handler for the actions icon
+            actionsIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showContextMenu(e, song);
+            });
 
             songListDiv.appendChild(button);
         });
@@ -617,32 +638,79 @@ function showContextMenu(e, song) {
 
     // Remove existing context menu
     if (contextMenu) hideContextMenu();
-
+    
+    // Get available playlists
+    const playlistOptions = Object.keys(playlists || {});
+    
     // Create context menu
     contextMenu = document.createElement('div');
     contextMenu.className = 'context-menu';
-    contextMenu.innerHTML = `
-        <div class="context-menu-item has-submenu">
-            <i class="fas fa-plus"></i>
-            Add to Playlist
-            <div class="context-submenu">
-                ${Object.keys(playlists).map(name => `
-                    <div class="context-menu-item" data-playlist="${name}">
-                        <i class="fas fa-list"></i>${name}
+    
+    if (playlistOptions.length > 0) {
+        contextMenu.innerHTML = `
+            <div class="context-menu-item has-submenu">
+                <i class="fas fa-plus"></i>
+                Add to Playlist
+                <div class="context-submenu">
+                    ${playlistOptions.map(name => `
+                        <div class="context-menu-item" data-playlist="${name}">
+                            <i class="fas fa-list"></i>${name}
+                        </div>
+                    `).join('')}
+                    <div class="context-menu-divider"></div>
+                    <div class="context-menu-item" id="create-new-playlist-context">
+                        <i class="fas fa-plus"></i>Create New Playlist
                     </div>
-                `).join('')}
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        contextMenu.innerHTML = `
+            <div class="context-menu-item" id="create-new-playlist-context">
+                <i class="fas fa-plus"></i>Create New Playlist
+            </div>
+        `;
+    }
 
     // Add click handlers for playlist items
-    contextMenu.querySelectorAll('.context-submenu .context-menu-item').forEach(item => {
+    contextMenu.querySelectorAll('.context-submenu .context-menu-item[data-playlist]').forEach(item => {
         item.onclick = () => {
             const playlistName = item.dataset.playlist;
             addSongToPlaylist(playlistName, song);
             hideContextMenu();
         };
     });
+    
+    // Add handler for creating a new playlist
+    const createPlaylistItem = contextMenu.querySelector('#create-new-playlist-context');
+    if (createPlaylistItem) {
+        createPlaylistItem.onclick = () => {
+            hideContextMenu();
+            createPlaylistModal.style.display = 'flex';
+            newPlaylistNameInput.focus();
+            
+            // Store the song to add after creating playlist
+            window.songToAddAfterCreate = song;
+            
+            // Modify the save button click handler temporarily
+            const originalSaveHandler = saveNewPlaylistBtn.onclick;
+            saveNewPlaylistBtn.onclick = async () => {
+                await createNewPlaylist();
+                
+                // Add the song to the new playlist if it exists
+                if (window.songToAddAfterCreate) {
+                    const playlistName = newPlaylistNameInput.value.trim();
+                    if (playlistName) {
+                        addSongToPlaylist(playlistName, window.songToAddAfterCreate);
+                    }
+                    window.songToAddAfterCreate = null;
+                }
+                
+                // Restore original handler
+                saveNewPlaylistBtn.onclick = originalSaveHandler;
+            };
+        };
+    }
 
     // Position and show menu
     contextMenu.style.top = `${e.pageY}px`;
@@ -689,6 +757,11 @@ const closeDrawerBtn = document.querySelector('.close-drawer');
 const playlistView = document.getElementById('playlist-view');
 const backToPlaylistsBtn = document.querySelector('.back-to-playlists');
 const playlistsContainer = document.getElementById('playlists-container');
+const createNewPlaylistBtn = document.getElementById('create-new-playlist');
+const createPlaylistModal = document.getElementById('create-playlist-modal');
+const closeModalBtn = document.querySelector('.close-modal');
+const saveNewPlaylistBtn = document.getElementById('save-new-playlist');
+const newPlaylistNameInput = document.getElementById('new-playlist-name');
 
 // Event Listeners
 showPlaylistsBtn.addEventListener('click', () => {
@@ -704,6 +777,66 @@ backToPlaylistsBtn.addEventListener('click', () => {
     playlistView.classList.remove('open');
     playlistDrawer.classList.add('open');
 });
+
+// Create Playlist Functionality
+createNewPlaylistBtn?.addEventListener('click', () => {
+    createPlaylistModal.style.display = 'flex';
+    newPlaylistNameInput.focus();
+});
+
+closeModalBtn?.addEventListener('click', () => {
+    createPlaylistModal.style.display = 'none';
+});
+
+saveNewPlaylistBtn?.addEventListener('click', createNewPlaylist);
+
+// Close modal when clicking outside
+window.addEventListener('click', (event) => {
+    if (event.target === createPlaylistModal) {
+        createPlaylistModal.style.display = 'none';
+    }
+});
+
+// Handle Enter key in the playlist name input
+newPlaylistNameInput?.addEventListener('keyup', (event) => {
+    if (event.key === 'Enter') {
+        createNewPlaylist();
+    }
+});
+
+// Function to create a new playlist
+async function createNewPlaylist() {
+    const playlistName = newPlaylistNameInput.value.trim();
+    
+    if (!playlistName) {
+        alert('Please enter a playlist name');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/playlists/${encodeURIComponent(playlistName)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ songs: [] })
+        });
+        
+        if (response.ok) {
+            // Add the empty playlist to the playlists object
+            playlists[playlistName] = [];
+            createPlaylistModal.style.display = 'none';
+            newPlaylistNameInput.value = '';
+            
+            // Reload playlists to show the new one
+            loadPlaylists();
+            alert(`Playlist "${playlistName}" created successfully!`);
+        } else {
+            alert('Failed to create playlist. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error creating playlist:', error);
+        alert('Error creating playlist. Please check your connection and try again.');
+    }
+}
 
 // Playlist Functions
 async function loadPlaylists() {
@@ -801,19 +934,35 @@ function showPlaylistSongs(playlist) {
         songElement.innerHTML = `
             <img src="${API_URL}/static/images/${song.image}" 
                  alt="${song.title}" 
-                 class="song-thumbnail"
+                 class="song-thumbnail" 
                  onerror="this.src='default.jpg'">
             <div class="song-info">
                 <div class="song-title">${song.title}</div>
                 <div class="song-artist">${song.artist}</div>
             </div>
+            <div class="song-actions">
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
             <div class="song-number">#${index + 1}</div>
         `;
         
-        songElement.addEventListener('click', () => {
-            playSong(index);
+        songElement.addEventListener('click', (e) => {
+            if (!e.target.closest('.song-actions')) {
+                playSong(index);
+            }
         });
         
+        songElement.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showContextMenu(e, song);
+        });
+        
+        const actionsBtn = songElement.querySelector('.song-actions');
+        actionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showContextMenu(e, song);
+        });
+
         playlistSongs.appendChild(songElement);
     });
     
@@ -823,40 +972,160 @@ function showPlaylistSongs(playlist) {
 // Update style for proper scrolling
 const style = document.createElement('style');
 style.textContent = `
+    /* Global animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(-20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    /* Apply animations to elements */
+    .song-item, #song-list button {
+        animation: fadeIn 0.3s ease-out;
+        animation-fill-mode: both;
+    }
+    
+    /* Stagger animation for song items */
+    .song-item:nth-child(1) { animation-delay: 0.05s; }
+    .song-item:nth-child(2) { animation-delay: 0.1s; }
+    .song-item:nth-child(3) { animation-delay: 0.15s; }
+    .song-item:nth-child(4) { animation-delay: 0.2s; }
+    .song-item:nth-child(5) { animation-delay: 0.25s; }
+    .song-item:nth-child(6) { animation-delay: 0.3s; }
+    
+    /* Main staggered animations */
+    #song-list button:nth-child(3n+1) { animation-delay: 0.1s; }
+    #song-list button:nth-child(3n+2) { animation-delay: 0.2s; }
+    #song-list button:nth-child(3n+3) { animation-delay: 0.3s; }
+    
     .playlist-view {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
-        height: 100vh;
+        height: calc(100vh - 90px); /* Adjust height to leave space for player */
         background: #121212;
         z-index: 1001;
         padding: 20px;
+        overflow-y: auto;
+        padding-bottom: 100px; /* Extra padding at bottom for visibility */
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .playlist-view.open {
         display: block;
+        animation: fadeIn 0.4s ease-out;
     }
 
     .playlist-header {
         margin-bottom: 20px;
+        position: sticky;
+        top: 0;
+        background: #121212;
+        z-index: 1002;
+        padding: 10px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .playlist-header .back-to-playlists {
+        transition: all 0.2s ease;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: white;
+        cursor: pointer;
+    }
+    
+    .playlist-header .back-to-playlists:hover {
+        background: rgba(255,255,255,0.2);
+        transform: scale(1.05);
     }
 
     .song-item {
         display: grid;
-        grid-template-columns: 60px 1fr 60px;
+        grid-template-columns: 60px 1fr auto auto;
         align-items: center;
         padding: 10px;
         gap: 15px;
-        background: #282828;
+        background: #121212;
         border-radius: 4px;
         margin-bottom: 8px;
-        transition: background 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .song-actions {
+        cursor: pointer;
+        color: #aaa;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+    
+    .song-actions:hover {
+        color: white;
+        background: rgba(255,255,255,0.1);
+    }
+    
+    #song-list .song-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    #song-list button:hover .song-actions {
+        opacity: 1;
+    }
+    
+    .song-item::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
     }
 
     .song-item:hover {
-        background: #383838;
+        background: #2a2a2a;
         cursor: pointer;
+        border: 1px solid #333;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transform: translateY(-2px);
+    }
+    
+    .song-item:hover::after {
+        transform: translateX(100%);
+    }
+    
+    .song-item:active {
+        transform: scale(0.98);
     }
 
     .song-thumbnail {
@@ -864,9 +1133,262 @@ style.textContent = `
         height: 50px;
         object-fit: cover;
         border-radius: 4px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
+    
+    .song-item:hover .song-thumbnail {
+        transform: scale(1.05);
+    }
+
+    /* Ensure player controls remain visible */
+    #custom-player {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1005; /* Higher than playlist view */
+        background: #282828;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    #custom-player:hover {
+        background: #323232;
+    }
+    
+    /* Player control buttons effects */
+    #play-pause, #prev-track, #next-track, #shuffle {
+        transition: all 0.2s ease;
+        transform-origin: center;
+    }
+    
+    #play-pause:hover, #prev-track:hover, #next-track:hover, #shuffle:hover {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+    
+    #play-pause:active, #prev-track:active, #next-track:active, #shuffle:active {
+        transform: scale(0.95);
+    }
+    
+    /* Volume control slider */
+    #volume-control {
+        transition: all 0.2s ease;
+    }
+    
+    #volume-control:hover {
+        opacity: 1;
+    }
+    
+    /* Now playing animation */
+    #now-playing-img {
+        transition: all 0.3s ease;
+        animation: pulse 3s infinite ease-in-out;
+    }
+    
+    /* Progress bar enhancement */
+    #progress {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    #progress:hover {
+        opacity: 1;
+    }
+    
+    /* Main page song list styling */
+    #song-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    #song-list button {
+        background: #121212;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        cursor: pointer;
+        color: white;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    #song-list button::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
+    }
+    
+    #song-list button:hover {
+        background: #2a2a2a;
+        border: 1px solid #333;
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    }
+    
+    #song-list button:hover::after {
+        transform: translateX(100%);
+    }
+    
+    #song-list button:active {
+        transform: translateY(-2px) scale(0.98);
+    }
+    
+    #song-list button img {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    
+    #song-list button:hover img {
+        transform: scale(1.05);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+    }
+    
+    #song-list button span {
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        transition: all 0.3s ease;
+    }
+    
+    #song-list button:hover span {
+        color: #1DB954; /* Spotify green color */
+    }
+    
+    /* Hamburger menu animation */    .menu-lines {        transition: all 0.3s ease;    }        .menu-lines:hover {        transform: scale(1.1);    }        /* Playlist drawer enhancements */    .playlist-drawer {        position: fixed;        top: 0;        left: 0;        width: 320px;        height: 100vh;        background: #121212;        z-index: 1010;        box-shadow: 0 0 20px rgba(0,0,0,0.4);        transform: translateX(-100%);        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);        display: flex;        flex-direction: column;    }        .playlist-drawer.open {        transform: translateX(0);        animation: slideIn 0.3s ease-out;    }        .playlists-container {        padding: 20px;        overflow-y: auto;        overflow-x: hidden;        flex: 1;        display: grid;        grid-template-columns: repeat(3, 1fr);        gap: 20px;        align-content: start;        height: calc(100vh - 80px);        scrollbar-width: thin;        scrollbar-color: #535353 #121212;    }        /* Webkit scrollbar styling */    .playlists-container::-webkit-scrollbar {        width: 8px;    }        .playlists-container::-webkit-scrollbar-track {        background: #121212;    }        .playlists-container::-webkit-scrollbar-thumb {        background-color: #535353;        border-radius: 4px;    }
 `;
 document.head.appendChild(style);
+
+// Add additional styles for the playlist drawer
+const playlistDrawerStyles = document.createElement('style');
+playlistDrawerStyles.textContent = `
+    /* Fix for playlist drawer scrolling */
+    .playlist-drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 320px;
+        height: 100vh;
+        background: #121212;
+        z-index: 1010;
+        box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        transform: translateX(-100%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .playlist-drawer.open {
+        transform: translateX(0);
+    }
+    
+    .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        background: #121212;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+    
+    .playlists-container {
+        padding: 20px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        align-content: start;
+        height: calc(100vh - 80px);
+        scrollbar-width: thin;
+        scrollbar-color: #535353 #121212;
+    }
+    
+    .playlist-card {
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        border-radius: 8px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.05);
+        padding-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .playlist-cover {
+        width: 100%;
+        aspect-ratio: 1/1;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+    
+    .playlist-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .playlist-info {
+        padding: 0 12px;
+    }
+    
+    .playlist-info h3 {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .playlist-info p {
+        margin: 0;
+        font-size: 12px;
+        color: #b3b3b3;
+    }
+    
+    .playlist-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .playlist-card:hover .playlist-cover img {
+        transform: scale(1.05);
+    }
+    
+    .playlist-card:active {
+        transform: translateY(-2px) scale(0.98);
+    }
+`;
+document.head.appendChild(playlistDrawerStyles);
 
 // Update these in your existing player code
 function updateNowPlaying(song) {
@@ -874,3 +1396,278 @@ function updateNowPlaying(song) {
     document.getElementById('now-playing-artist').textContent = song.artist;
     document.getElementById('now-playing-img').src = song.thumbnail || 'default.jpg';
 }
+
+const styleAdditions = document.createElement('style');
+styleAdditions.textContent = `
+    .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        background: #121212;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+    
+    .drawer-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .create-playlist-btn {
+        background: #1DB954;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s ease;
+    }
+    
+    .create-playlist-btn:hover {
+        background: #1ed760;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .create-playlist-btn:active {
+        transform: translateY(0);
+    }
+    
+    .close-drawer {
+        background: transparent;
+        border: none;
+        color: #aaa;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .close-drawer:hover {
+        color: white;
+        background: rgba(255,255,255,0.1);
+    }
+    
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .modal-content {
+        background: #282828;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        color: white;
+        font-size: 18px;
+    }
+    
+    .close-modal {
+        background: transparent;
+        border: none;
+        color: #aaa;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .close-modal:hover {
+        color: white;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        color: #b3b3b3;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 10px 12px;
+        background: #3e3e3e;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        color: white;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-group input:focus {
+        border-color: #1DB954;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.3);
+    }
+    
+    .save-playlist-btn {
+        background: #1DB954;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+    
+    .save-playlist-btn:hover {
+        background: #1ed760;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .save-playlist-btn:active {
+        transform: translateY(0);
+    }
+    
+         .playlist-card {         transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);         border-radius: 8px;         overflow: hidden;         background: rgba(255, 255, 255, 0.05);         padding-bottom: 12px;         display: flex;         flex-direction: column;         height: 100%;     }          .playlist-cover {         width: 100%;         aspect-ratio: 1/1;         overflow: hidden;         margin-bottom: 10px;     }          .playlist-cover img {         width: 100%;         height: 100%;         object-fit: cover;         transition: transform 0.3s ease;     }          .playlist-info {         padding: 0 12px;     }          .playlist-info h3 {         margin: 0 0 5px 0;         font-size: 14px;         white-space: nowrap;         overflow: hidden;         text-overflow: ellipsis;     }          .playlist-info p {         margin: 0;         font-size: 12px;         color: #b3b3b3;     }          .playlist-card:hover {         transform: translateY(-5px) scale(1.02);         box-shadow: 0 6px 15px rgba(0,0,0,0.3);         background: rgba(255, 255, 255, 0.1);     }          .playlist-card:hover .playlist-cover img {         transform: scale(1.05);     }          .playlist-card:active {         transform: translateY(-2px) scale(0.98);     }
+    
+    /* Search input animation */
+    #search-input {
+        transition: all 0.3s ease;
+    }
+    
+    #search-input:focus {
+        box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.5);
+        transform: translateY(-1px);
+    }
+    
+    /* For You section */
+    .recommendation-item {
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    
+    .recommendation-item:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .recommendation-item:active {
+        transform: translateY(-1px) scale(0.98);
+    }
+
+    /* Context menu styling */
+    .context-menu {
+        position: absolute;
+        background: #282828;
+        border-radius: 4px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        min-width: 180px;
+        z-index: 1010;
+        opacity: 0;
+        transform: scale(0.95);
+        transform-origin: top left;
+        transition: transform 0.1s, opacity 0.1s;
+        pointer-events: none;
+    }
+    
+    .context-menu.active {
+        opacity: 1;
+        transform: scale(1);
+        pointer-events: all;
+    }
+    
+    .context-menu-item {
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        color: #e0e0e0;
+        transition: all 0.2s;
+        position: relative;
+        font-size: 14px;
+    }
+    
+    .context-menu-item i {
+        font-size: 14px;
+        width: 16px;
+        text-align: center;
+    }
+    
+    .context-menu-item:hover {
+        background: #333;
+    }
+    
+    .context-menu-item.has-submenu {
+        position: relative;
+    }
+    
+    .context-menu-item.has-submenu:after {
+        content: '›';
+        position: absolute;
+        right: 15px;
+        font-size: 18px;
+    }
+    
+    .context-submenu {
+        position: absolute;
+        left: 100%;
+        top: 0;
+        background: #282828;
+        border-radius: 4px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        min-width: 180px;
+        display: none;
+    }
+    
+    .context-menu-item.has-submenu:hover .context-submenu {
+        display: block;
+    }
+    
+    .context-menu-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.1);
+        margin: 5px 0;
+    }
+`;
+document.head.appendChild(styleAdditions);

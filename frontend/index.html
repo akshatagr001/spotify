@@ -33,9 +33,29 @@
     <div id="playlist-drawer" class="playlist-drawer">
         <div class="drawer-header">
             <h2>Playlists</h2>
-            <button class="close-drawer"><i class="fas fa-times"></i></button>
+            <div class="drawer-actions">
+                <button id="create-new-playlist" class="create-playlist-btn"><i class="fas fa-plus"></i> New Playlist</button>
+                <button class="close-drawer"><i class="fas fa-times"></i></button>
+            </div>
         </div>
         <div id="playlists-container" class="playlists-container"></div>
+    </div>
+
+    <!-- Create Playlist Modal -->
+    <div id="create-playlist-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Playlist</h3>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="new-playlist-name">Playlist Name</label>
+                    <input type="text" id="new-playlist-name" placeholder="My Awesome Playlist">
+                </div>
+                <button id="save-new-playlist" class="save-playlist-btn">Create Playlist</button>
+            </div>
+        </div>
     </div>
 
     <!-- Add Playlist View -->
