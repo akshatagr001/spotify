@@ -124,57 +124,77 @@ function updateLastSession() {
 }
 
 function playSong(index) {
-    if (!songList || !songList[index]) {
-        console.error('Invalid song index or empty song list');
-        return;
-    }
-
-    currentIndex = index;
-    const song = songList[index];
-    
-    if (!song || !song.name) {
+    // Defensive: ensure songList[index] exists and has a valid .name string
+    if (
+        !songList ||
+        !songList[index] ||
+        typeof songList[index].name !== 'string' ||
+        !songList[index].name.trim()
+    ) {
         console.error('Invalid song data');
         return;
     }
+
+    const song = songList[index];
+    currentIndex = index;
     
-    // Track user activity
-    fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
-        method: 'POST'
-    })
-    .then(() => {
-        updateLastSession();
-        fetchRecommendations();
-    })
-    .catch(error => console.error('Error tracking activity:', error));
-    
+    // Use originalName for audio source if available, fallback to name
+    const audioName = song.originalName || song.name;
+    if (!audioName) {
+        console.error('Invalid song data: missing filename');
+        return;
+    }
+
+    const audioSrc = `${API_URL}/stream/${encodeURIComponent(audioName)}`;
+    console.log('Playing:', audioSrc); // Debug log
+
+    // Track user activity if song.name exists
+    if (song.name) {
+        fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
+            method: 'POST'
+        })
+        .then(() => {
+            updateLastSession();
+            fetchRecommendations();
+        })
+        .catch(error => console.error('Error tracking activity:', error));
+    }
+
     // Update UI only if elements exist
     if (currentButton) currentButton.classList.remove('active');
-    currentButton = songListDiv?.children[index];
-    if (currentButton) currentButton.classList.add('active');
-    
-    // Update now playing info with network URLs
+    if (typeof currentIndex === "number" && songListDiv?.children[currentIndex]) {
+        currentButton = songListDiv.children[currentIndex];
+        currentButton.classList.add('active');
+    }
+
+    // Update now playing info
     if (nowPlayingImg) {
-        nowPlayingImg.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
+        nowPlayingImg.src = song.image
+            ? `${API_URL}/static/images/${song.image}`
+            : (song.thumbnail || 'default.jpg');
     }
     if (nowPlayingTitle) {
-        nowPlayingTitle.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
+        nowPlayingTitle.textContent = song.title || (song.name ? song.name.replace(/\.(mp3|m4a)$/, '') : '');
     }
-    
-    // Update audio source with network URL
+
+    // Update audio source and play
     if (audioPlayer) {
-        audioPlayer.src = `${API_URL}/stream/${song.name}`;
+        audioPlayer.src = audioSrc;
+        audioPlayer.load();
         audioPlayer.play()
             .then(() => {
-                if (playPauseBtn) {
-                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                }
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
             })
-            .catch(error => console.error('Error playing audio:', error));
+            .catch(error => {
+                console.error('Error playing song:', error);
+                console.log('Attempted source:', audioSrc);
+            });
     }
 }
 
 // Progress bar interaction
 progressBar.addEventListener('click', (e) => {
+    if (!isFinite(audioPlayer.duration) || audioPlayer.duration === 0) return;
     const bounds = progressBar.getBoundingClientRect();
     const x = e.clientX - bounds.left;
     const percentage = x / bounds.width;
@@ -190,7 +210,7 @@ progressBar.addEventListener('mousedown', (e) => {
 });
 
 progressBar.addEventListener('mousemove', (e) => {
-    if (isDragging) {
+    if (isDragging && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
         const bounds = progressBar.getBoundingClientRect();
         const x = e.clientX - bounds.left;
         const percentage = Math.min(Math.max(x / bounds.width, 0), 1);
@@ -204,7 +224,7 @@ progressBar.addEventListener('mousemove', (e) => {
 });
 
 progressBar.addEventListener('mouseup', (e) => {
-    if (isDragging) {
+    if (isDragging && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
         isDragging = false;
         const bounds = progressBar.getBoundingClientRect();
         const x = e.clientX - bounds.left;
@@ -219,7 +239,7 @@ progressBar.addEventListener('mouseup', (e) => {
 
 // Handle cases where mouse is released outside the progress bar
 document.addEventListener('mouseup', (e) => {
-    if (isDragging) {
+    if (isDragging && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
         isDragging = false;
         const bounds = progressBar.getBoundingClientRect();
         let percentage;
@@ -662,15 +682,18 @@ async function addSongToPlaylist(playlistName, song) {
     }
 }
 
-// Drawer functionality
+// Playlist drawer functionality
 const showPlaylistsBtn = document.getElementById('show-playlists');
 const playlistDrawer = document.getElementById('playlist-drawer');
 const closeDrawerBtn = document.querySelector('.close-drawer');
 const playlistView = document.getElementById('playlist-view');
 const backToPlaylistsBtn = document.querySelector('.back-to-playlists');
+const playlistsContainer = document.getElementById('playlists-container');
 
+// Event Listeners
 showPlaylistsBtn.addEventListener('click', () => {
     playlistDrawer.classList.add('open');
+    loadPlaylists();
 });
 
 closeDrawerBtn.addEventListener('click', () => {
@@ -679,7 +702,37 @@ closeDrawerBtn.addEventListener('click', () => {
 
 backToPlaylistsBtn.addEventListener('click', () => {
     playlistView.classList.remove('open');
+    playlistDrawer.classList.add('open');
 });
+
+// Playlist Functions
+async function loadPlaylists() {
+    try {
+        const response = await fetch('https://spotify-backend-6mr0.onrender.com/playlists');
+        const data = await response.json();
+        
+        if (data.playlists) {
+            const playlists = Object.entries(data.playlists).map(([username, songs]) => {
+                return {
+                    name: `${username}'s Collection`,
+                    owner: username,
+                    songs: songs.map(song => ({
+                        title: song.name.replace('.m4a', '').replace('.mp3', ''),
+                        artist: 'Various Artists',
+                        thumbnail: `https://spotify-backend-6mr0.onrender.com/static/images/${encodeURIComponent(song.image)}`,
+                        audioSrc: `https://spotify-backend-6mr0.onrender.com/songs/${encodeURIComponent(song.name)}`,
+                        duration: 0 // Will be set when audio loads
+                    }))
+                };
+            });
+            
+            displayPlaylists(playlists);
+        }
+    } catch (error) {
+        console.error('Error loading playlists:', error);
+        playlistsContainer.innerHTML = '<p>Error loading playlists</p>';
+    }
+}
 
 function displayPlaylists(playlists) {
     const container = document.getElementById('playlists-container');
@@ -688,37 +741,136 @@ function displayPlaylists(playlists) {
     playlists.forEach(playlist => {
         const card = document.createElement('div');
         card.className = 'playlist-card';
-        card.innerHTML = `<h3>${playlist.name}</h3>`;
+        
+        // Get first song's thumbnail for the playlist cover
+        const coverImage = playlist.songs[0]?.thumbnail || 'default.jpg';
+        
+        card.innerHTML = `
+            <div class="playlist-cover">
+                <img src="${coverImage}" 
+                     alt="Playlist cover"
+                     onerror="this.src='default.jpg'">
+            </div>
+            <div class="playlist-info">
+                <h3>${playlist.name}</h3>
+                <p>${playlist.songs.length} songs • By ${playlist.owner}</p>
+            </div>
+        `;
         
         card.addEventListener('click', () => {
-            displayPlaylistSongs(playlist);
-            playlistView.classList.add('open');
+            showPlaylistSongs(playlist);
         });
         
         container.appendChild(card);
     });
 }
 
-function displayPlaylistSongs(playlist) {
-    const songsContainer = document.getElementById('playlist-songs');
-    document.querySelector('.playlist-title').textContent = playlist.name;
-    songsContainer.innerHTML = '';
+function showPlaylistSongs(playlist) {
+    const playlistView = document.getElementById('playlist-view');
+    const playlistSongs = document.getElementById('playlist-songs');
+    const playlistTitle = document.querySelector('.playlist-title');
     
-    playlist.songs.forEach(song => {
-        const songItem = document.createElement('div');
-        songItem.className = 'song-item';
-        songItem.innerHTML = `
-            <img src="${song.thumbnail}" alt="${song.title}" width="40">
+    if (!playlist || !Array.isArray(playlist.songs)) {
+        console.error('Invalid playlist data:', playlist);
+        return;
+    }
+
+    playlistTitle.textContent = playlist.name || 'Playlist';
+    playlistSongs.innerHTML = '';
+    
+    // Set current songList to match playlist songs format
+    songList = playlist.songs.map(song => {
+        // Extract the filename from audioSrc if present or use name
+        const songName = song.audioSrc ? 
+            decodeURIComponent(song.audioSrc.split('/').pop()) : 
+            (song.name || '');
+            
+        return {
+            name: songName,            // The full filename with extension for streaming
+            title: song.title || (songName ? songName.replace(/\.(mp3|m4a)$/i, '') : 'Unknown Track'),
+            image: song.image || (song.thumbnail ? song.thumbnail.split('/').pop() : 'default.jpg'),
+            artist: song.artist || 'Unknown'
+        };
+    });
+
+    console.log('Mapped songList:', songList); // Debug log
+    
+    songList.forEach((song, index) => {
+        const songElement = document.createElement('div');
+        songElement.className = 'song-item';
+        songElement.innerHTML = `
+            <img src="${API_URL}/static/images/${song.image}" 
+                 alt="${song.title}" 
+                 class="song-thumbnail"
+                 onerror="this.src='default.jpg'">
             <div class="song-info">
                 <div class="song-title">${song.title}</div>
                 <div class="song-artist">${song.artist}</div>
             </div>
+            <div class="song-number">#${index + 1}</div>
         `;
         
-        songItem.addEventListener('click', () => {
-            playSong(song);
+        songElement.addEventListener('click', () => {
+            playSong(index);
         });
         
-        songsContainer.appendChild(songItem);
+        playlistSongs.appendChild(songElement);
     });
+    
+    playlistView.classList.add('open');
+}
+
+// Update style for proper scrolling
+const style = document.createElement('style');
+style.textContent = `
+    .playlist-view {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: #121212;
+        z-index: 1001;
+        padding: 20px;
+    }
+
+    .playlist-view.open {
+        display: block;
+    }
+
+    .playlist-header {
+        margin-bottom: 20px;
+    }
+
+    .song-item {
+        display: grid;
+        grid-template-columns: 60px 1fr 60px;
+        align-items: center;
+        padding: 10px;
+        gap: 15px;
+        background: #282828;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        transition: background 0.2s;
+    }
+
+    .song-item:hover {
+        background: #383838;
+        cursor: pointer;
+    }
+
+    .song-thumbnail {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+`;
+document.head.appendChild(style);
+
+// Update these in your existing player code
+function updateNowPlaying(song) {
+    document.getElementById('now-playing-title').textContent = song.title;
+    document.getElementById('now-playing-artist').textContent = song.artist;
+    document.getElementById('now-playing-img').src = song.thumbnail || 'default.jpg';
 }

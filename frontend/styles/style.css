@@ -3,7 +3,7 @@
 }
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background: linear-gradient(to bottom, #111111, #000000); /* darker background */
+    background: linear-gradient(to bottom, #0a0a0a, #000000); /* even darker background */
     color: #fff;
     font-weight: bold;
     text-align: center;
@@ -38,7 +38,7 @@ h1, h2, h3, h4, h5, h6, label, .recommendation-title, .recommendation-plays, .tr
 
 /* Song Card Design */
 #song-list button {
-    background: #282828;
+    background: #181818;
     border: none;
     border-radius: 8px;
     padding: 0;
@@ -80,7 +80,7 @@ h1, h2, h3, h4, h5, h6, label, .recommendation-title, .recommendation-plays, .tr
 }
 
 #song-list button.active {
-    background: #1DB954 !important;
+    background: #222 !important;
 }
 
 /* Player Controls */
@@ -90,7 +90,7 @@ h1, h2, h3, h4, h5, h6, label, .recommendation-title, .recommendation-plays, .tr
     left: 0;
     right: 0;
     height: 90px;
-    background: rgba(24, 24, 24, 0.98);
+    background: rgba(10, 10, 10, 0.98);
     backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
@@ -885,62 +885,30 @@ body.dark-theme #theme-toggle {
 
 /* Container and Sidebar Layout */
 .container {
-    display: flex;
-    height: calc(100vh - 100px);
-    margin-bottom: 100px;
-}
-
-.sidebar {
-    width: 40%;
-    max-width: 300px;
-    background: #121212;
-    border-right: 1px solid #282828;
-    padding: 20px;
-    overflow-y: auto;
+    margin-top: 60px;  /* Space for header */
+    padding-bottom: 100px;  /* Space for player */
+    position: relative;
+    z-index: 1;
 }
 
 .main-content {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
+    position: relative;
+    z-index: 1;
 }
 
-.playlists-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.playlists-list .playlist-item {
-    padding: 10px;
-    border-radius: 4px;
-    background: #282828;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.playlists-list .playlist-item:hover {
-    background-color: #383838;
-}
-
-.sidebar h2 {
-    color: #fff;
-    margin-bottom: 20px;
-    font-size: 1.5rem;
-}
-
-/* Playlist Drawer Styles */
+/* Playlist Drawer */
 .playlist-drawer {
     position: fixed;
     left: -40%;
     top: 0;
     width: 40%;
-    height: 100%;
-    background: #121212;
+    height: 100vh;
+    background: #0a0a0a;
     transition: left 0.3s ease;
-    z-index: 1000;
-    padding: 20px;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.3);
 }
 
 .playlist-drawer.open {
@@ -948,84 +916,205 @@ body.dark-theme #theme-toggle {
 }
 
 .drawer-header {
+    padding: 24px 24px 16px 24px;
+    background: #0a0a0a;
+    border-bottom: 1px solid #282828;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
-.close-drawer {
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    font-size: 1.2rem;
-}
-
-.playlists-container {
+#playlists-container {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 24px 24px 100px 24px;
+    min-height: 0;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 20px; /* Space between playlist cards */
+    background: #111;
 }
 
 .playlist-card {
-    padding: 15px;
-    background: #282828;
-    border-radius: 4px;
-    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px;
+    background: #181818;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: background 0.2s;
+    width: 100%;
+}
+
+.playlist-card:not(:last-child) {
+    margin-bottom: 0; /* Remove margin, use gap instead */
 }
 
 .playlist-card:hover {
-    background: #383838;
+    background: #232323;
+    cursor: pointer;
 }
 
 .playlist-view {
     position: fixed;
-    left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
-    background: #121212;
-    z-index: 1001;
-    padding: 20px;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #0a0a0a;
+    z-index: 201;
     display: none;
+    flex-direction: column;
 }
 
 .playlist-view.open {
-    display: block;
+    display: flex;
 }
 
 .playlist-header {
+    padding: 24px 24px 16px 24px;
+    background: #0a0a0a;
+    border-bottom: 1px solid #282828;
     display: flex;
     align-items: center;
     gap: 20px;
-    margin-bottom: 30px;
+    flex-shrink: 0;
 }
 
-.back-to-playlists {
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    font-size: 1.2rem;
-}
-
+#playlist-songs,
 .playlist-songs {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 0 0 110px 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 60px;
+    gap: 15px;
+    align-items: stretch;
+    box-sizing: border-box;
+    max-height: calc(100vh - 110px - 70px);
+    width: 80%;
+    margin: 0 auto;
+    justify-items: stretch;
+    pointer-events: auto;
+    background: transparent; /* Remove any background that could block clicks */
 }
 
 .song-item {
+    height: 60px;
     display: flex;
     align-items: center;
-    padding: 10px;
-    background: #282828;
-    border-radius: 4px;
+    background: #181818; /* Use a dark but not pure black background for better contrast and clickability */
+    border-radius: 8px;
+    overflow: hidden;
     cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 0;
+    gap: 0;
+    pointer-events: auto;
 }
 
 .song-item:hover {
-    background: #383838;
+    background: #232323;
+}
+
+.song-thumbnail {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    object-fit: cover;
+    border-radius: 8px 0 0 8px;
+    flex-shrink: 0;
+}
+
+.song-info {
+    padding: 10px 15px;
+    flex-grow: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.song-title {
+    font-size: 14px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: bold;
+}
+
+.song-artist {
+    font-size: 12px;
+    color: #b3b3b3;
+    margin: 4px 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.song-number {
+    min-width: 40px;
+    text-align: right;
+    color: #b3b3b3;
+    font-size: 0.95em;
+    padding-right: 10px;
+}
+
+/* Custom Scrollbar Styles */
+#playlists-container,
+#playlist-songs,
+.playlist-songs,
+.playlist-drawer,
+.playlist-view,
+body,
+html {
+    scrollbar-width: thin;
+    scrollbar-color: #1DB954 #232323;
+}
+
+#playlists-container::-webkit-scrollbar,
+#playlist-songs::-webkit-scrollbar,
+.playlist-songs::-webkit-scrollbar,
+.playlist-drawer::-webkit-scrollbar,
+.playlist-view::-webkit-scrollbar,
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
+    width: 10px;
+    background: #232323;
+}
+
+#playlists-container::-webkit-scrollbar-thumb,
+#playlist-songs::-webkit-scrollbar-thumb,
+.playlist-songs::-webkit-scrollbar-thumb,
+.playlist-drawer::-webkit-scrollbar-thumb,
+.playlist-view::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+html::-webkit-scrollbar-thumb {
+    background: #1DB954;
+    border-radius: 8px;
+}
+
+#playlists-container::-webkit-scrollbar-thumb:hover,
+#playlist-songs::-webkit-scrollbar-thumb:hover,
+.playlist-songs::-webkit-scrollbar-thumb:hover,
+.playlist-drawer::-webkit-scrollbar-thumb:hover,
+.playlist-view::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+html::-webkit-scrollbar-thumb:hover {
+    background: #17a74a;
+}
+
+.recommendations-grid,
+.last-session,
+.for-you-section {
+    background: #111 !important;
 }
