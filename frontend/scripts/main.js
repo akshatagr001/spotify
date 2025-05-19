@@ -279,6 +279,84 @@ function formatTime(seconds) {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
 }
 
+// Event listeners for search
+if (searchInput && searchBtn) {
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(handleSearch, 300); // Debounce search
+    });
+
+    searchBtn.addEventListener('click', handleSearch);
+} else {
+    console.error("Search input or button not found, search functionality will not work.");
+}
+
+// Fuzzy search options
+const fuseOptions = {
+    keys: ['name', 'title'],
+    threshold: 0.4, // Lower = more strict matching
+    distance: 100, // How far to extend the fuzzy match
+    minMatchCharLength: 2
+};
+
+// Function to handle search
+function handleSearch() {
+    if (!allSongs || allSongs.length === 0) {
+        console.warn("allSongs is empty, cannot perform search yet.");
+        if (songListDiv) {
+             songListDiv.innerHTML = '<p style="color:#b3b3b3;font-weight:bold;text-align:center;margin-top:20px;">Song library is loading or empty. Try again shortly.</p>';
+        }
+        return;
+    }
+
+    const query = searchInput.value.toLowerCase().trim();
+    
+    if (query === "") {
+        if (window.navigationState && window.navigationState.currentView === 'playlist-view' && currentPlaylist && playlists[currentPlaylist] && Array.isArray(playlists[currentPlaylist].songs)) {
+            songList = [...playlists[currentPlaylist].songs];
+        } else {
+            songList = [...allSongs];
+        }
+        filteredSongs = []; 
+    } else {
+        // Initialize Fuse with our song list
+        const fuse = new Fuse(songList, fuseOptions);
+        
+        // Get fuzzy search results
+        const results = fuse.search(query);
+        
+        // Extract the matched songs
+        filteredSongs = results.map(result => result.item);
+        songList = [...filteredSongs];
+    }
+
+    if (songListDiv) {
+        if (songList.length === 0 && query !== "") {
+            songListDiv.innerHTML = '<p style="color:#b3b3b3;font-weight:bold;text-align:center;margin-top:20px;">No songs found matching your search.</p>';
+        } else if (songList.length === 0 && query === "" && (!window.navigationState || window.navigationState.currentView === 'home' || (window.navigationState.currentView === 'playlist-view' && (!currentPlaylist || !playlists[currentPlaylist] || playlists[currentPlaylist].songs.length === 0)))) {
+             if (typeof window.renderSongList === 'function') {
+                window.renderSongList();
+            } else {
+                 songListDiv.innerHTML = '<p style="color:#b3b3b3;font-weight:bold;text-align:center;margin-top:20px;">Song list is empty.</p>';
+            }
+        } else {
+            if (typeof window.renderSongList === 'function') {
+                window.renderSongList();
+            } else {
+                console.error("renderSongList function not found. Cannot update song display.");
+                songListDiv.innerHTML = '<p style="color:red;font-weight:bold;">Error: Could not display songs.</p>';
+            }
+        }
+    } else {
+        console.error("songListDiv not found. Cannot update song display for search results.");
+    }
+    
+    currentIndex = 0; 
+    if (typeof window.refreshPlayingHighlight === 'function') {
+        window.refreshPlayingHighlight();
+    }
+}
+
 function fetchRecommendations() {
     fetch(`${API_URL}/api/recommendations`)
         .then(response => response.json())
