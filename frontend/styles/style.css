@@ -1776,3 +1776,70 @@ a:hover {
     transform: scale(1.15);
     color: #1ed760;
 }
+
+/* Last Session Scroll Buttons */
+.scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--spotify-green);
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.scroll-btn:hover {
+    background: #1ed760;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.scroll-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.scroll-left {
+    left: 0;
+}
+
+.scroll-right {
+    right: 0;
+}
+
+/* Mobile Responsive Scroll Buttons */
+@media screen and (max-width: 768px) {
+    .scroll-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    /* Adjust session tracks padding for buttons */
+    .session-tracks {
+        padding-left: 35px;
+        padding-right: 35px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .scroll-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    /* Further reduce padding on very small screens */
+    .session-tracks {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+}
