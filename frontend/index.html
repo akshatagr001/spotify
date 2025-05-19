@@ -13,6 +13,74 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Debug script for hamburger menu - ensure it runs AFTER main.js -->
+    <script>
+        // Run this after the window loads to ensure all scripts have loaded
+        window.addEventListener('load', function() {
+            console.log('Initializing debug script on window load (index.html)');
+            
+            // Fallback toggleMenu (if needed by other parts, but main.js should define it)
+            if (typeof window.toggleMenu !== 'function') {
+                console.log('DEBUG: ADDING missing window.toggleMenu function (index.html)');
+                window.toggleMenu = function(forceClose) {
+                    console.log('DEBUG: Fallback toggleMenu called (index.html)');
+                    if (typeof window.toggleHamburgerMenu === 'function') {
+                        window.toggleHamburgerMenu(forceClose);
+                    } else {
+                        console.error('DEBUG: toggleHamburgerMenu function not found (index.html)');
+                    }
+                };
+            }
+            
+            // DO NOT call window.initMenu() here; main.js handles its single initialization.
+            // console.log('DEBUG: Attempting to call window.initMenu() from index.html load event - THIS IS NOW REMOVED');
+            // if (typeof window.initMenu === 'function') {
+            //     // window.initMenu(); // REMOVED TO PREVENT DOUBLE INITIALIZATION
+            // }
+            
+            // Show debug info with a delay
+            setTimeout(function() {
+                console.log('DEBUG INFO (from index.html):');
+                console.log('  window.toggleHamburgerMenu exists:', typeof window.toggleHamburgerMenu === 'function');
+                console.log('  window.initMenu exists:', typeof window.initMenu === 'function');
+                
+                const menuEl = document.querySelector('.hamburger-menu');
+                const menuContent = document.querySelector('.menu-content');
+                console.log('  Menu element (.hamburger-menu) exists:', !!menuEl);
+                console.log('  Menu content (.menu-content) exists:', !!menuContent);
+                
+                if (menuEl) {
+                    console.log('  Menu element active class:', menuEl.classList.contains('active'));
+                }
+                if (menuContent) {
+                    console.log('  Menu content display style:', window.getComputedStyle(menuContent).display);
+                    console.log('  Menu content visibility style:', window.getComputedStyle(menuContent).visibility);
+                }
+            }, 1500); // Increased delay to ensure main.js has run
+        });
+    </script>
+
+    <style>
+        /* Critical hamburger menu fix */
+        .hamburger-menu.active .menu-content {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+            z-index: 2001 !important;
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+        }
+        
+        /* Default state when closed */
+        .hamburger-menu:not(.active) .menu-content {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+    </style>
 </head>
 <body>
     <div class="hamburger-menu">
@@ -21,11 +89,9 @@
             <span></span>
             <span></span>
         </div>        
-        <div class="menu-content">
+        <div class="menu-content" style="transition: all 0.3s ease;">
             <a href="#" class="menu-item" id="show-playlists"><i class="fas fa-list"></i> Playlists</a>
-            <a href="https://spotify-backend-6mr0.onrender.com/download/setup" class="download-link">
-                <i class="fas fa-download"></i> Download App
-            </a>
+            <a href="https://spotify-backend-6mr0.onrender.com/download/setup" class="download-link" target="_blank"><i class="fas fa-download"></i> Download App</a>
         </div>
     </div>
 
@@ -34,11 +100,18 @@
         <div class="drawer-header">
             <h2>Playlists</h2>
             <div class="drawer-actions">
-                <button id="create-new-playlist" class="create-playlist-btn"><i class="fas fa-plus"></i> New Playlist</button>
+                <div class="view-toggle">
+                    <button id="grid-view-btn" class="view-btn active" title="Grid View">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button id="list-view-btn" class="view-btn" title="List View">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
                 <button class="close-drawer"><i class="fas fa-times"></i></button>
             </div>
         </div>
-        <div id="playlists-container" class="playlists-container"></div>
+        <div id="playlists-container" class="playlists-container grid-view"></div>
     </div>
 
     <!-- Create Playlist Modal -->
@@ -67,11 +140,7 @@
         <div id="playlist-songs" class="playlist-songs"></div>
     </div>
 
-    <a id="home-btn" class="home-button" href="index.html">
-        <i class="fas fa-home"></i>
-    </a>
-
-    <h1>🎵 My Spotify Clone 🎵</h1>
+    <h1 id="app-title" class="app-title">🎵 My Spotify Clone 🎵</h1>
 
     <div class="container">
         <div class="main-content">
@@ -85,7 +154,7 @@
 
             <!-- Last Session Section -->
             <div class="last-session">
-                <h2>Last Session</h2>
+                <h2>Latest Play</h2>
                 <div class="session-tracks" id="last-session-tracks">
                     <!-- Last played tracks will be added here dynamically -->
                 </div>
@@ -136,9 +205,99 @@
         </div>
     </div>
 
+    <!-- Custom Confirmation Modal -->
+    <div id="custom-confirm-modal" class="modal">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-header">
+                <h3 id="confirm-title">Confirm Action</h3>
+                <button class="close-modal" id="close-confirm-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">Are you sure you want to proceed?</p>
+                <div class="confirm-actions">
+                    <button id="confirm-yes-btn" class="btn btn-danger">Yes, Remove</button>
+                    <button id="confirm-no-btn" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="custom-alert-modal" class="modal">
+        <div class="modal-content alert-modal-content">
+            <div class="modal-header">
+                <h3 id="alert-title">Notification</h3>
+                <button class="close-modal" id="close-alert-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="alert-message">This is an alert message.</p>
+                <div class="alert-actions">
+                    <button id="alert-ok-btn" class="btn btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <audio id="audio-player"></audio>
 
     <!-- Scripts -->
     <script src="scripts/main.js"></script>
+    
+    <!-- Additional CSS overrides for menu functionality -->
+    <style>
+        /* Ensure hamburger menu is visible */
+        .hamburger-menu {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 2000 !important;
+        }
+        
+        /* Ensure menu lines are visible and clickable */
+        .menu-lines {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            cursor: pointer !important;
+            z-index: 2001 !important;
+            pointer-events: auto !important;
+        }
+        
+        /* Ensure menu lines spans are visible */
+        .menu-lines span {
+            visibility: visible !important;
+            opacity: 1 !important;
+            background-color: white !important;
+            cursor: pointer !important;
+            pointer-events: auto !important;
+        }
+        
+        /* Ensure active menu content is visible and clickable */
+        .hamburger-menu.active .menu-content {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 2002 !important;
+            pointer-events: auto !important;
+        }
+        
+        /* Ensure menu is completely hidden when closed */
+        .hamburger-menu:not(.active) .menu-content {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        
+        /* Ensure menu items are visible and clickable */
+        .menu-item, .download-link {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            z-index: 2003 !important;
+        }
+    </style>
 </body>
 </html>
