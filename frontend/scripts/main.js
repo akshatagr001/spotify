@@ -360,7 +360,7 @@ function handleSearch() {
 function fetchRecommendations() {
     fetch(`${API_URL}/api/recommendations`)
         .then(response => response.json())
-        .then(data => {
+        .then (data => {
             // Remember current song to highlight it later
             const currentlyPlaying = currentIndex !== undefined && songList[currentIndex];
             const recommendationsGrid = document.getElementById('recommendations-grid');
@@ -488,6 +488,31 @@ function playSong(index, forceList) {
     const audioSrc = `${API_URL}/stream/${encodeURIComponent(audioName)}`;
     console.log('Playing audio source:', audioSrc);
 
+    // Normalize the current and new source for comparison
+    const currentSrc = new URL(audioPlayer.src, window.location.origin).href;
+    const newSrc = new URL(audioSrc, window.location.origin).href;
+
+    // Only set src and load if the song is actually different
+    if (currentSrc !== newSrc) {
+        console.log('Loading new song:', audioSrc);
+        audioPlayer.src = audioSrc;
+        audioPlayer.load();
+        audioPlayer.play()
+            .then(() => {
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            })
+            .catch(error => {
+                console.error('Error playing song:', error);
+                console.log('Attempted source:', audioSrc);
+            });
+    } else if (audioPlayer.paused) {
+        // If it's the same song but paused, just resume
+        audioPlayer.play()
+            .then(() => {
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            });
+    }
+
     // Track user activity if song.name exists
     if (song.name) {
         fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
@@ -548,10 +573,8 @@ function playSong(index, forceList) {
         nowPlayingTitle.textContent = song.title || (song.name ? song.name.replace(/\.(mp3|m4a)$/, '') : '');
     }
 
-    // Update audio source and play
-    if (audioPlayer) {
-        audioPlayer.src = audioSrc;
-        audioPlayer.load();
+    // Play the audio (do not reload if not needed)
+    if (audioPlayer.paused) {
         audioPlayer.play()
             .then(() => {
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
@@ -564,21 +587,110 @@ function playSong(index, forceList) {
 }
 
 // Progress bar interaction
-progressBar.addEventListener('click', (e) => {
-    if (!isFinite(audioPlayer.duration) || audioPlayer.duration === 0) return;
-    const bounds = progressBar.getBoundingClientRect();
-    const x = e.clientX - bounds.left;
-    const percentage = x / bounds.width;
-    audioPlayer.currentTime = percentage * audioPlayer.duration;
-});
-
 progressBar.addEventListener('mousedown', (e) => {
     isDragging = true;
     wasPlaying = !audioPlayer.paused;
     if (wasPlaying) {
         audioPlayer.pause();
     }
+    updateProgressFromEvent(e);
+    progressBar.classList.add('dragging');
 });
+
+document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        updateProgressFromEvent(e);
+    }
+});
+
+document.addEventListener('mouseup', (e) => {
+    if (isDragging) {
+        isDragging = false;
+        progressBar.classList.remove('dragging');
+        
+        // Update the progress one final time
+        updateProgressFromEvent(e);
+        
+        // Resume playback if it was playing before dragging
+        if (wasPlaying) {
+            // Wait for seeking to complete before playing
+            const onSeeked = () => {
+                audioPlayer.play()
+                    .then(() => {
+                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    });
+                audioPlayer.removeEventListener('seeked', onSeeked);
+            };
+            audioPlayer.addEventListener('seeked', onSeeked);
+        }
+        wasPlaying = false;
+    }
+});
+
+function updateProgressFromEvent(e) {
+    if (!audioPlayer.duration) return;
+    
+    const bounds = progressBar.getBoundingClientRect();
+    const x = e.clientX - bounds.left;
+    const width = bounds.width;
+    const percentage = Math.min(Math.max(x / width, 0), 1);
+    
+    // Update progress bar value
+    progressBar.value = percentage * 100;
+    progressBar.style.setProperty('--value', `${percentage * 100}%`);
+    
+    // Update current time display
+    const newTime = percentage * audioPlayer.duration;
+    currentTimeEl.textContent = formatTime(newTime);
+    
+    // Set the new time and wait for seeking to complete
+    audioPlayer.currentTime = newTime;
+}
+
+// Touch events for mobile
+progressBar.addEventListener('touchstart', (e) => {
+    isDragging = true;
+    wasPlaying = !audioPlayer.paused;
+    if (wasPlaying) audioPlayer.pause();
+    updateProgressFromEvent(e.touches[0]);
+    progressBar.classList.add('dragging');
+});
+
+progressBar.addEventListener('touchmove', (e) => {
+    if (isDragging) {
+        e.preventDefault();
+        updateProgressFromEvent(e.touches[0]);
+    }
+}, { passive: false });
+
+progressBar.addEventListener('touchend', (e) => {
+    if (isDragging) {
+        isDragging = false;
+        progressBar.classList.remove('dragging');
+        
+        // Update one final time with the last touch position
+        if (e.changedTouches.length > 0) {
+            updateProgressFromEvent(e.changedTouches[0]);
+        }
+        
+        // Do not resume playback automatically after seeking
+        // wasPlaying = false;
+    }
+});
+
+// // Enhance mouse events
+// progressBar.addEventListener('mousedown', (e) => {
+//     isDragging = true;
+//     wasPlaying = !audioPlayer.paused;
+//     if (wasPlaying) audioPlayer.pause();
+//     progressBar.classList.add('seeking');
+    
+//     // Update position immediately on mousedown
+//     const bounds = progressBar.getBoundingClientRect();
+//     const x = e.clientX - bounds.left;
+//     const percentage = Math.min(Math.max(x / bounds.width, 0), 1);
+//     progressBar.value = percentage * 100;
+// });
 
 progressBar.addEventListener('mousemove', (e) => {
     if (isDragging && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
@@ -586,48 +698,44 @@ progressBar.addEventListener('mousemove', (e) => {
         const x = e.clientX - bounds.left;
         const percentage = Math.min(Math.max(x / bounds.width, 0), 1);
         progressBar.value = percentage * 100;
+        progressBar.style.setProperty('--value', `${percentage * 100}%`);
         const time = percentage * audioPlayer.duration;
-        // Only update the time display, not audioPlayer.currentTime
-        const currentMinutes = Math.floor(time / 60);
-        const currentSeconds = Math.floor(time % 60);
-        currentTimeEl.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+        currentTimeEl.textContent = formatTime(time);
+        
+        // Show preview time tooltip
+        const tooltip = progressBar.querySelector('.progress-tooltip') || 
+                       (() => {
+                           const tip = document.createElement('div');
+                           tip.className = 'progress-tooltip';
+                           progressBar.appendChild(tip);
+                           return tip;
+                       })();
+        
+        tooltip.textContent = formatTime(time);
+        tooltip.style.left = `${x}px`;
+        tooltip.style.display = 'block';
     }
 });
 
-progressBar.addEventListener('mouseup', (e) => {
-    if (isDragging && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
-        isDragging = false;
-        const bounds = progressBar.getBoundingClientRect();
-        const x = e.clientX - bounds.left;
-        const percentage = Math.min(Math.max(x / bounds.width, 0), 1);
-        audioPlayer.currentTime = percentage * audioPlayer.duration;
-        if (wasPlaying) {
-            audioPlayer.play();
-        }
-        wasPlaying = false;
-    }
-});
-
-// Handle cases where mouse is released outside the progress bar
 document.addEventListener('mouseup', (e) => {
-    if (isDragging && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
+    if (isDragging) {
         isDragging = false;
-        const bounds = progressBar.getBoundingClientRect();
-        let percentage;
-        if (
-            e.clientX >= bounds.left &&
-            e.clientX <= bounds.right &&
-            e.clientY >= bounds.top &&
-            e.clientY <= bounds.bottom
-        ) {
-            const x = e.clientX - bounds.left;
-            percentage = Math.min(Math.max(x / bounds.width, 0), 1);
-        } else {
-            percentage = progressBar.value / 100;
-        }
-        audioPlayer.currentTime = percentage * audioPlayer.duration;
+        progressBar.classList.remove('dragging');
+        
+        // Update the progress one final time
+        updateProgressFromEvent(e);
+        
+        // Resume playback if it was playing before dragging
         if (wasPlaying) {
-            audioPlayer.play();
+            // Wait for seeking to complete before playing
+            const onSeeked = () => {
+                audioPlayer.play()
+                    .then(() => {
+                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    });
+                audioPlayer.removeEventListener('seeked', onSeeked);
+            };
+            audioPlayer.addEventListener('seeked', onSeeked);
         }
         wasPlaying = false;
     }
@@ -1119,7 +1227,7 @@ window.refreshPlayingHighlight = function() {
                 }
             });
             
-            // Highlight in playlist view
+            // Highlight in playlist view if it exists
             const playlistItems = document.querySelectorAll('#playlist-songs .song-item');
             playlistItems.forEach(item => {
                 const titleEl = item.querySelector('.song-title');
@@ -1971,7 +2079,7 @@ function initLastSessionScrollControls() {
         leftScrollBtn.style.opacity = sessionContainer.scrollLeft > 20 ? '1' : '0.3';
         
         // Show right button only when more to scroll
-        const maxScrollLeft = sessionContainer.scrollWidth - sessionContainer.clientWidth - 20;
+        const maxScrollLeft = sessionContainer.scrollWidth - sessionContainer.clientWidth -  20;
         rightScrollBtn.style.opacity = sessionContainer.scrollLeft < maxScrollLeft ? '1' : '0.3';
     });
     
@@ -1992,6 +2100,7 @@ function initLastSessionScrollControls() {
         const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
         
         if (isVisible) {
+            const scrollAmount = getColumnWidth(); // Define scrollAmount here
             if (e.key === 'ArrowLeft' && e.altKey) {
                 sessionContainer.scrollBy({
                     left: -scrollAmount,
@@ -2286,89 +2395,21 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Add event listeners for view toggle buttons
-document.addEventListener('DOMContentLoaded', () => {
-    const gridViewBtn = document.getElementById('grid-view-btn');
-    const listViewBtn = document.getElementById('list-view-btn');
-    const playlistsContainer = document.getElementById('playlists-container');
+// Ensure clicking on the progress bar updates the playback position correctly
+progressBar.addEventListener('click', (e) => {
+    if (!audioPlayer.duration) return;
 
-    // Set default view from localStorage or use grid view
-    const savedView = localStorage.getItem('playlistView') || 'grid';
-    setPlaylistView(savedView);
+    const bounds = progressBar.getBoundingClientRect();
+    const x = e.clientX - bounds.left;
+    const width = bounds.width;
+    const percentage = Math.min(Math.max(x / width, 0), 1);
 
-    if (gridViewBtn && listViewBtn && playlistsContainer) {
-        // Grid view button
-        gridViewBtn.addEventListener('click', () => {
-            setPlaylistView('grid');
-        });
+    // Update the audio player's current time
+    const newTime = percentage * audioPlayer.duration;
+    audioPlayer.currentTime = newTime;
 
-        // List view button
-        listViewBtn.addEventListener('click', () => {
-            setPlaylistView('list');
-        });
-    }
-
-    // Function to set playlist view
-    function setPlaylistView(view) {
-        // Save to localStorage
-        localStorage.setItem('playlistView', view);
-        
-        // Update container class
-        if (playlistsContainer) {
-            playlistsContainer.classList.remove('grid-view', 'list-view');
-            playlistsContainer.classList.add(`${view}-view`);
-        }
-        
-        // Update button active states
-        if (gridViewBtn && listViewBtn) {
-            gridViewBtn.classList.toggle('active', view === 'grid');
-            listViewBtn.classList.toggle('active', view === 'list');
-        }
-    }
+    // Update the progress bar and current time display
+    progressBar.value = percentage * 100;
+    progressBar.style.setProperty('--value', `${percentage * 100}%`);
+    currentTimeEl.textContent = formatTime(newTime);
 });
-
-// Function to show custom alert modal
-function showCustomAlert(title, message, onOk) {
-    const alertModal = document.getElementById('custom-alert-modal');
-    const alertTitle = document.getElementById('alert-title');
-    const alertMessage = document.getElementById('alert-message');
-    const alertOkBtn = document.getElementById('alert-ok-btn');
-    const closeAlertModalBtn = document.getElementById('close-alert-modal');
-
-    if (!alertModal || !alertTitle || !alertMessage || !alertOkBtn || !closeAlertModalBtn) {
-        console.error('Custom alert modal elements not found');
-        // Fallback to default alert if modal is not found
-        alert(message); // Use the raw message for fallback
-        if (onOk) onOk();
-        return;
-    }
-
-    alertTitle.textContent = title;
-    alertMessage.innerHTML = message; // Use innerHTML for styled messages
-
-    // Remove previous event listeners to prevent multiple calls
-    const newOkBtn = alertOkBtn.cloneNode(true);
-    alertOkBtn.parentNode.replaceChild(newOkBtn, alertOkBtn);
-
-    newOkBtn.onclick = () => {
-        alertModal.style.display = 'none';
-        if (onOk) onOk();
-    };
-    
-    closeAlertModalBtn.onclick = () => {
-        alertModal.style.display = 'none';
-        if (onOk) onOk(); // Usually an alert's close implies an OK action
-    };
-    
-    // Handle Escape key to close modal
-    const handleEscKey = (event) => {
-        if (event.key === 'Escape') {
-            alertModal.style.display = 'none';
-            if (onOk) onOk();
-            document.removeEventListener('keydown', handleEscKey);
-        }
-    };
-    document.addEventListener('keydown', handleEscKey);
-
-    alertModal.style.display = 'flex';
-}
