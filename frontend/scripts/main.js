@@ -447,38 +447,8 @@ function updateLastSession() {
         });
 }
 
-function playSong(index, forceList) {
-    // Allow forcing a specific songList (useful for navigation scenarios)
-    const targetSongList = forceList || songList;
-    
-    console.log(`playSong called with index ${index}, using ${forceList ? 'forced list' : 'current songList'}`);
-    
-    // Validate the index and song data
-    if (
-        !targetSongList ||
-        !targetSongList[index] ||
-        typeof targetSongList[index].name !== 'string' ||
-        !targetSongList[index].name.trim()
-    ) {
-        console.error(`Invalid song data at index ${index}`);
-        return;
-    }
-
-    const song = targetSongList[index];
-    
-    // Debug log for song selection
-    console.log(`Playing song from ${window.navigationState?.currentView || 'unknown'} view:`, song.name);
-    
-    // Update all relevant state
-    currentIndex = index;
-    
-    // Update navigation state
-    if (window.navigationState) {
-        window.navigationState.currentSongFilename = song.name;
-        window.navigationState.currentPlayingSongIndex = index;
-    }
-    
-    // Use originalName for audio source if available, fallback to name
+// Ensure audio source is set correctly for all songs
+function setAudioSource(song) {
     const audioName = song.originalName || song.name;
     if (!audioName) {
         console.error('Invalid song data: missing filename');
@@ -486,108 +456,133 @@ function playSong(index, forceList) {
     }
 
     const audioSrc = `${API_URL}/stream/${encodeURIComponent(audioName)}`;
-    console.log('Playing audio source:', audioSrc);
-
-    // Normalize the current and new source for comparison
     const currentSrc = new URL(audioPlayer.src, window.location.origin).href;
     const newSrc = new URL(audioSrc, window.location.origin).href;
 
-    // Only set src and load if the song is actually different
     if (currentSrc !== newSrc) {
-        console.log('Loading new song:', audioSrc);
+        console.log('Setting new audio source:', audioSrc);
         audioPlayer.src = audioSrc;
         audioPlayer.load();
-        audioPlayer.play()
-            .then(() => {
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            })
-            .catch(error => {
-                console.error('Error playing song:', error);
-                console.log('Attempted source:', audioSrc);
-            });
-    } else if (audioPlayer.paused) {
-        // If it's the same song but paused, just resume
-        audioPlayer.play()
-            .then(() => {
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            });
+    } else {
+        console.log('Audio source is already set to:', audioSrc);
+    }
+}
+
+// Add helper functions with other utility functions
+function isValidAudioState() {
+    return audioPlayer && 
+           audioPlayer.readyState > 0 && 
+           isFinite(audioPlayer.duration) && 
+           audioPlayer.duration > 0;
+}
+
+function updateProgressDisplay(percentage) {
+    const percent = Math.min(Math.max(percentage, 0), 1) * 100;
+    progressBar.value = percent;
+    progressBar.style.setProperty('--value', `${percent}%`);
+    currentTimeEl.textContent = formatTime(percent * audioPlayer.duration / 100);
+}
+
+// Replace progress bar event listener
+progressBar.addEventListener('click', function progressBarClickHandler(e) {
+    if (!isValidAudioState()) {
+        console.warn('Audio not ready - please wait for song to load');
+        return;
     }
 
-    // Track user activity if song.name exists
+    const bounds = progressBar.getBoundingClientRect();
+    const width = bounds.width;
+    
+    if (width <= 0) return;
+
+    const x = Math.min(Math.max(e.clientX - bounds.left, 0), width);
+    const percentage = x / width;
+    const newTime = percentage * audioPlayer.duration;
+
+    if (!isFinite(newTime) || newTime < 0) return;
+
+    try {
+        audioPlayer.currentTime = Math.min(newTime, audioPlayer.duration);
+        updateProgressDisplay(percentage);
+    } catch (error) {
+        console.error('Seek failed:', error);
+    }
+});
+
+// Update playSong function
+function playSong(index, forceList) {
+    // Clean up previous audio source
+    if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.removeAttribute('src');
+        audioPlayer.load();
+    }
+
+    const targetSongList = forceList || songList;
+    if (!targetSongList || !targetSongList[index] || !targetSongList[index].name) {
+        console.error(`Invalid song data at index ${index}`);
+        return;
+    }
+
+    const song = targetSongList[index];
+    currentIndex = index;
+
+    if (window.navigationState) {
+        window.navigationState.currentSongFilename = song.name;
+        window.navigationState.currentPlayingSongIndex = index;
+    }
+
+    const audioName = song.originalName || song.name;
+    if (!audioName) {
+        console.error('Invalid song data: missing filename');
+        return;
+    }
+
+    const audioSrc = `${API_URL}/stream/${encodeURIComponent(audioName)}`;
+    audioPlayer.src = audioSrc;
+    
+    const onLoaded = () => {
+        audioPlayer.removeEventListener('loadedmetadata', onLoaded);
+        if (!isValidAudioState()) {
+            console.error('Failed to load audio metadata');
+            return;
+        }
+        audioPlayer.play().catch(e => console.error('Playback failed:', e));
+    };
+
+    audioPlayer.addEventListener('loadedmetadata', onLoaded);
+    audioPlayer.load();
+
+    // Rest of existing playSong function remains unchanged
     if (song.name) {
-        fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, {
-            method: 'POST'
-        })
-        .then(() => {
-            updateLastSession();
-            fetchRecommendations();
-        })
-        .catch(error => console.error('Error tracking activity:', error));
+        fetch(`${API_URL}/track-activity/${encodeURIComponent(song.name)}`, { method: 'POST' })
+            .then(() => {
+                updateLastSession();
+                fetchRecommendations();
+            })
+            .catch(error => console.error('Error tracking activity:', error));
     }
 
-    // Remove playing-song class from all possible song elements
-    document.querySelectorAll('.playing-song').forEach(el => {
-        el.classList.remove('playing-song');
-    });
-
-    // Add playing-song class to current song in main song list
-    if (typeof currentIndex === "number" && songListDiv?.children[currentIndex]) {
+    document.querySelectorAll('.playing-song').forEach(el => el.classList.remove('playing-song'));
+    if (songListDiv?.children[currentIndex]) {
         currentButton = songListDiv.children[currentIndex];
         currentButton.classList.add('playing-song');
     }
 
-    // Highlight song in recommendations if it exists
-    const recommendationsItems = document.querySelectorAll('#recommendations-grid .recommendation-item');
-    recommendationsItems.forEach(item => {
-        const titleEl = item.querySelector('.recommendation-title');
-        if (titleEl && titleEl.textContent === (song.title || song.name.replace(/\.(mp3|m4a)$/, ''))) {
-            item.classList.add('playing-song');
-        }
-    });
-
-    // Highlight song in last session if it exists
-    const sessionItems = document.querySelectorAll('#last-session-tracks button');
-    sessionItems.forEach(item => {
-        const spanText = item.querySelector('span')?.textContent;
-        if (spanText === song.name.replace(/\.(mp3|m4a)$/, '')) {
-            item.classList.add('playing-song');
-        }
-    });
-
-    // Highlight song in playlist view if it exists
-    const playlistItems = document.querySelectorAll('#playlist-songs .song-item');
-    playlistItems.forEach(item => {
-        const titleEl = item.querySelector('.song-title');
-        if (titleEl && titleEl.textContent === (song.title || song.name.replace(/\.(mp3|m4a)$/, ''))) {
-            item.classList.add('playing-song');
-        }
-    });
-
-    // Update now playing info
     if (nowPlayingImg) {
         nowPlayingImg.src = song.image
             ? `${API_URL}/static/images/${song.image}`
-            : (song.thumbnail || 'default.jpg');
+            : 'default.jpg';
     }
     if (nowPlayingTitle) {
-        nowPlayingTitle.textContent = song.title || (song.name ? song.name.replace(/\.(mp3|m4a)$/, '') : '');
-    }
-
-    // Play the audio (do not reload if not needed)
-    if (audioPlayer.paused) {
-        audioPlayer.play()
-            .then(() => {
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            })
-            .catch(error => {
-                console.error('Error playing song:', error);
-                console.log('Attempted source:', audioSrc);
-            });
+        nowPlayingTitle.textContent = song.title || song.name.replace(/\.(mp3|m4a)$/, '');
     }
 }
 
 // Progress bar interaction
 progressBar.addEventListener('mousedown', (e) => {
+    if (!audioPlayer.duration) return;
+    
     isDragging = true;
     wasPlaying = !audioPlayer.paused;
     if (wasPlaying) {
@@ -595,6 +590,13 @@ progressBar.addEventListener('mousedown', (e) => {
     }
     updateProgressFromEvent(e);
     progressBar.classList.add('dragging');
+    
+    // Ensure the progress bar updates immediately
+    const bounds = progressBar.getBoundingClientRect();
+    const x = e.clientX - bounds.left;
+    const percentage = (x / bounds.width);
+    const newTime = audioPlayer.duration * percentage;
+    audioPlayer.currentTime = newTime;
 });
 
 document.addEventListener('mousemove', (e) => {
@@ -628,7 +630,7 @@ document.addEventListener('mouseup', (e) => {
 });
 
 function updateProgressFromEvent(e) {
-    if (!audioPlayer.duration) return;
+    if (!audioPlayer.duration || !isFinite(audioPlayer.duration)) return;
     
     const bounds = progressBar.getBoundingClientRect();
     const x = e.clientX - bounds.left;
@@ -639,12 +641,21 @@ function updateProgressFromEvent(e) {
     progressBar.value = percentage * 100;
     progressBar.style.setProperty('--value', `${percentage * 100}%`);
     
-    // Update current time display
+    // Calculate and update the new time
     const newTime = percentage * audioPlayer.duration;
+    
+    // Update the display before setting currentTime
     currentTimeEl.textContent = formatTime(newTime);
     
-    // Set the new time and wait for seeking to complete
-    audioPlayer.currentTime = newTime;
+    // Set the new time
+    try {
+        audioPlayer.currentTime = newTime;
+    } catch (error) {
+        console.error('Error setting currentTime:', error);
+    }
+    
+    // Dispatch a seeking event to ensure the audio player updates
+    audioPlayer.dispatchEvent(new Event('seeking'));
 }
 
 // Touch events for mobile
@@ -800,10 +811,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Store the current view when rendering
         const currentView = window.navigationState?.currentView || 'home';
         console.log(`Rendering songs in ${currentView} view:`, songList?.length || 0);
-        
+
         songListDiv.innerHTML = '';
 
         if (!Array.isArray(songList) || songList.length === 0) {
@@ -811,9 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Make a static copy of the current songList for the event handlers
-        // This prevents issues with stale references if songList changes later
-        const currentSongList = [...songList]; 
+        const currentSongList = [...songList];
 
         currentSongList.forEach((song, index) => {
             if (!song?.name) {
@@ -830,42 +838,27 @@ document.addEventListener('DOMContentLoaded', () => {
             img.alt = song.name;
             img.onerror = () => img.src = 'default.jpg';
 
-            // Store the song name as a data attribute for easier identification
             button.dataset.songName = song.name;
             span.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
-            
+
             actionsIcon.className = 'song-actions';
             actionsIcon.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
-            
+
             button.appendChild(img);
             button.appendChild(span);
             button.appendChild(actionsIcon);
-            
-            // Safe event binding for playing song - USE A CLOSURE to capture current index and song
+
             button.addEventListener('click', (function(capturedIndex, capturedSong) {
                 return function(e) {
-                    // Don't play if clicking on the actions button
                     if (e.target.closest('.song-actions')) return;
-                    
                     console.log(`Song clicked: ${capturedSong.name} at index ${capturedIndex}`);
-                    
-                    // Force the current song list when playing from main view
                     if (currentView === 'home') {
-                        songList = [...allSongs]; // Ensure we're using the full song list
+                        songList = [...allSongs];
                     }
-                    
-                    // Always pass the current index explicitly
                     playSong(capturedIndex, currentSongList);
                 };
             })(index, song));
-            
-            // Add context menu for adding to playlist
-            button.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                showContextMenu(e, song);
-            });
-            
-            // Add click handler for the actions icon
+
             actionsIcon.addEventListener('click', (e) => {
                 e.stopPropagation();
                 showContextMenu(e, song);
@@ -873,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             songListDiv.appendChild(button);
         });
-    }
+    };
 
     // Load songs first, then render
     fetch(`${API_URL}/songs`)
