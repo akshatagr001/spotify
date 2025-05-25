@@ -209,8 +209,9 @@ window.initMenu = function() {
     const downloadLink = document.querySelector('.download-link');
     if (downloadLink) {
         downloadLink.onclick = function(e) {
+            e.preventDefault();
             console.log('Download link menu item clicked');
-            // Allow default link behavior but close the menu
+            triggerAppDownload();
             setTimeout(() => window.toggleHamburgerMenu(true), 100); // Force close after a short delay
         };
     }
@@ -270,6 +271,28 @@ const savePlaylistBtn = document.getElementById('save-playlist');
 
 // Network configuration
 const API_URL = `https://spotify-backend-6mr0.onrender.com`;
+
+// Device detection and download automation
+function getDeviceType() {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    if (/android/i.test(ua)) return 'android';
+    if (/windows/i.test(ua)) return 'windows';
+    return 'other';
+}
+
+function triggerAppDownload() {
+    const device = getDeviceType();
+    let endpoint = '';
+    
+    if (device === 'android') {
+        endpoint = '/download/android';
+    } else {
+        // Default to Windows for desktop or unsupported devices
+        endpoint = '/download/windows';
+    }
+    
+    window.location.href = `${API_URL}${endpoint}`;
+}
 
 // Utility functions
 function formatTime(seconds) {

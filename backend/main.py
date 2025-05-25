@@ -244,19 +244,38 @@ async def get_recommendations():
         logger.error(f"Error fetching recommendations: {e}")
         return {"recommendations": [], "error": str(e)}
 
-@app.get("/download/setup")
-async def download_setup():
-    setup_file = "./Spotify Clone Setup 1.0.0.zip"
+@app.get("/download/windows")
+async def download_windows():
+    setup_file = "./Musicalya Setup 1.0.0.zip"
     if os.path.exists(setup_file):
         return FileResponse(
             path=setup_file,
-            filename="Spotify Clone Setup 1.0.0.zip",
+            filename="Musicalya Setup 1.0.0.zip",
             media_type="application/octet-stream"
         )
     return JSONResponse(
         status_code=404,
-        content={"error": "Setup file not found"}
+        content={"error": "Windows installer not found"}
     )
+
+@app.get("/download/android")
+async def download_android():
+    apk_file = "./Musicalya.apk"
+    if os.path.exists(apk_file):
+        return FileResponse(
+            path=apk_file,
+            filename="Musicalya.apk",
+            media_type="application/vnd.android.package-archive"
+        )
+    return JSONResponse(
+        status_code=404,
+        content={"error": "Android APK not found"}
+    )
+
+@app.get("/download/setup")
+async def download_setup():
+    # Redirect to windows download by default for backward compatibility
+    return await download_windows()
 
 @app.get("/recently-played")
 async def recently_played():
