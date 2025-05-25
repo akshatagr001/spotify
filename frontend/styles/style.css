@@ -1894,3 +1894,216 @@ a:hover {
         padding-right: 30px;
     }
 }
+
+/* --- MOBILE PLAYER IMAGE FIX --- */
+@media screen and (max-width: 768px) {
+    /* Show the now playing image in the player bar on mobile */
+    #custom-player {
+        flex-direction: row !important;
+        align-items: center !important;
+        height: 70px !important;
+        min-height: 60px !important;
+        padding: 0 8px !important;
+        gap: 0 !important;
+    }
+    .player-left {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        min-width: 0 !important;
+        max-width: 60px !important;
+        flex: 0 0 60px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    #now-playing {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 60px !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    #now-playing-img {
+        display: block !important;
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        max-width: 48px !important;
+        max-height: 48px !important;
+        object-fit: cover !important;
+        border-radius: 6px !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.25) !important;
+        margin: 0 !important;
+    }
+    #now-playing-info {
+        display: none !important;
+    }
+    .player-center {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .player-right {
+        display: none !important;
+    }
+}
+
+/* --- MOBILE PLAYLIST DRAWER FIX --- */
+@media screen and (max-width: 768px) {
+    .playlist-drawer {
+        width: 100vw !important;
+        left: -100vw !important;
+        max-width: 100vw !important;
+        min-width: 0 !important;
+        z-index: 2002 !important;
+        box-shadow: 0 0 30px rgba(0,0,0,0.5) !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+    }
+    .playlist-drawer.open {
+        left: 0 !important;
+        transform: translateX(0) !important;
+        animation: slideIn 0.3s ease-out !important;
+    }
+    .drawer-header {
+        padding: 12px 10px !important;
+        font-size: 1.1em !important;
+    }
+    .playlists-container {
+        padding: 10px 0 60px 0 !important;
+        height: calc(100vh - 60px) !important;
+        max-height: calc(100vh - 60px) !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+    }
+    .playlist-card {
+        margin-bottom: 8px !important;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .playlist-drawer {
+        width: 100vw !important;
+        left: -100vw !important;
+        max-width: 100vw !important;
+        min-width: 0 !important;
+    }
+    .playlist-drawer.open {
+        left: 0 !important;
+        transform: translateX(0) !important;
+    }
+    .drawer-header {
+        padding: 10px 6px !important;
+        font-size: 1em !important;
+    }
+    .playlists-container {
+        padding: 6px 0 50px 0 !important;
+        height: calc(100vh - 50px) !important;
+        max-height: calc(100vh - 50px) !important;
+    }
+}
+
+/* --- MOBILE PLAYLIST SONGS LIST VIEW FIX --- */
+@media screen and (max-width: 768px) {
+    #playlist-songs {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        grid-template-columns: none !important;
+        margin-top: 10px !important;
+        padding: 0 0 10px 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100vw !important;
+    }
+    .song-item {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 10px 8px !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        border-radius: 6px !important;
+        background: var(--spotify-dark) !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+    }
+    .song-thumbnail {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        border-radius: 4px !important;
+        margin-right: 8px !important;
+    }
+    .song-info {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+    .song-title {
+        font-size: 15px !important;
+        margin-bottom: 2px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .song-artist {
+        font-size: 12px !important;
+        color: var(--spotify-light-gray) !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .song-actions {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 16px !important;
+        margin-left: 6px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    .song-number {
+        font-size: 12px !important;
+        color: var(--spotify-light-gray) !important;
+        margin-left: 6px !important;
+        min-width: 24px !important;
+        text-align: right !important;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    #playlist-songs {
+        gap: 5px !important;
+        padding: 0 0 6px 0 !important;
+    }
+    .song-item {
+        padding: 8px 4px !important;
+    }
+    .song-thumbnail {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
+    }
+    .song-title {
+        font-size: 13px !important;
+    }
+    .song-artist {
+        font-size: 11px !important;
+    }
+    .song-actions {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 14px !important;
+    }
+    .song-number {
+        font-size: 10px !important;
+        min-width: 18px !important;
+    }
+}
