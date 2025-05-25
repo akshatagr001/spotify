@@ -421,7 +421,8 @@ function updateLastSession() {
                     img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
                     img.alt = song.name;
                     
-                    text.innerText = song.name.replace(/\.(mp3|m4a)$/, '');
+                    // Use splitNameTwoRows for two-line display
+                    text.innerHTML = splitNameTwoRows(song.name.replace(/\.(mp3|m4a)$/,''));
                     
                     btn.appendChild(img);
                     btn.appendChild(text);
@@ -828,26 +829,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn('Invalid song data:', song);
                 return;
             }
-
             const button = document.createElement('button');
             const img = document.createElement('img');
             const span = document.createElement('span');
             const actionsIcon = document.createElement('div');
-
             img.src = song.image ? `${API_URL}/static/images/${song.image}` : 'default.jpg';
             img.alt = song.name;
             img.onerror = () => img.src = 'default.jpg';
-
             button.dataset.songName = song.name;
-            span.textContent = song.name.replace(/\.(mp3|m4a)$/, '');
-
+            // Use splitNameTwoRows for two-line display
+            span.innerHTML = splitNameTwoRows(song.name.replace(/\.(mp3|m4a)$/,''));
             actionsIcon.className = 'song-actions';
             actionsIcon.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
-
             button.appendChild(img);
             button.appendChild(span);
             button.appendChild(actionsIcon);
-
             button.addEventListener('click', (function(capturedIndex, capturedSong) {
                 return function(e) {
                     if (e.target.closest('.song-actions')) return;
@@ -858,12 +854,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     playSong(capturedIndex, currentSongList);
                 };
             })(index, song));
-
             actionsIcon.addEventListener('click', (e) => {
                 e.stopPropagation();
-                showContextMenu(e, song);
+                showPlaylistContextMenu(e, song);
             });
-
+            button.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showPlaylistContextMenu(e, song);
+            });
             songListDiv.appendChild(button);
         });
     };
@@ -1472,6 +1470,27 @@ function hideContextMenu() {
     }
 }
 
+function hidePlaylistContextMenu() {
+    if (playlistContextMenu) {
+        // Remove event listener to avoid memory leaks
+        if (playlistContextMenu.handleDocumentClick) {
+            document.removeEventListener('click', playlistContextMenu.handleDocumentClick);
+        }
+        // Remove showing-context class from the target element
+        if (playlistContextMenu.targetElement) {
+            playlistContextMenu.targetElement.classList.remove('showing-context');
+        }
+        playlistContextMenu.classList.remove('active');
+        // Remove after transition
+        setTimeout(() => {
+            if (playlistContextMenu && playlistContextMenu.parentNode) {
+                playlistContextMenu.remove();
+            }
+            playlistContextMenu = null;
+        }, 100);
+    }
+}
+
 // Function to ensure the hamburger menu is visible - make it globally accessible
 window.showHamburgerMenu = function() {
     const hamburgerMenu = document.querySelector('.hamburger-menu');
@@ -1705,6 +1724,28 @@ newPlaylistNameInput?.addEventListener('keyup', (event) => {
         createNewPlaylist();
     }
 });
+
+// Helper: Split long song names into two rows
+function splitNameTwoRows(name, maxLen = 18) {
+    if (typeof name !== 'string') return name;
+    if (name.length > maxLen) {
+        let mid = Math.floor(name.length / 2);
+        let before = name.lastIndexOf(' ', mid);
+        let after = name.indexOf(' ', mid);
+        let splitAt;
+        if (before === -1 && after === -1) {
+            splitAt = mid;
+        } else if (before === -1) {
+            splitAt = after;
+        } else if (after === -1) {
+            splitAt = before;
+        } else {
+            splitAt = (mid - before <= after - mid) ? before : after;
+        }
+        return name.slice(0, splitAt) + '<br>' + name.slice(splitAt + 1);
+    }
+    return name;
+}
 
 // Function to create a new playlist
 async function createNewPlaylist() {
@@ -1960,7 +2001,7 @@ function showPlaylistSongs(playlist) {
                  class="song-thumbnail" 
                  onerror="this.src='default.jpg'">
             <div class="song-info">
-                <div class="song-title">${song.title}</div>
+                <div class="song-title">${splitNameTwoRows(song.title)}</div>
                 <div class="song-artist">${song.artist}</div>
             </div>
             <div class="song-actions">
@@ -1977,13 +2018,13 @@ function showPlaylistSongs(playlist) {
         
         songElement.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            showContextMenu(e, song);
+            showPlaylistContextMenu(e, song);
         });
         
         const actionsBtn = songElement.querySelector('.song-actions');
         actionsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            showContextMenu(e, song);
+            showPlaylistContextMenu(e, song);
         });
 
         playlistSongs.appendChild(songElement);
@@ -2040,7 +2081,7 @@ function initLastSessionScrollControls() {
             // Check if we can extract a pixel value
             const match = gridTemplateColumns.match(/(\d+)px/);
             if (match && match[1]) {
-                return parseInt(match[1], 10) + 15; // Add the gap
+                return parseInt(match[1], 10) +  15; // Add the gap
             }
         }
         
@@ -2165,44 +2206,99 @@ function showCustomConfirm(title, message, onConfirm) {
 }
 
 // Update showPlaylistContextMenu to use custom confirm modal
-function showPlaylistContextMenu(e, playlist) {
+function showPlaylistContextMenu(e, contextObj) {
     e.preventDefault();
 
     // Remove existing context menu
     if (playlistContextMenu) hidePlaylistContextMenu();
     if (contextMenu) hideContextMenu();
     
-    // Create context menu
     playlistContextMenu = document.createElement('div');
     playlistContextMenu.className = 'context-menu';
-    
-    // Skip adding remove option for the "Create New Playlist" card
-    if (playlist && playlist.isCreateNewCard) {
-        playlistContextMenu.innerHTML = `
-            <div class="context-menu-item">
-                <i class="fas fa-info-circle"></i>
-                Create a new playlist
-            </div>
-        `;
-    } else {
-        playlistContextMenu.innerHTML = `
-            <div class="context-menu-item" id="remove-playlist">
-                <i class="fas fa-trash"></i>
-                Remove Playlist
-            </div>
-        `;
-        
-        // Add handler for removing playlist
-        const removePlaylistItem = playlistContextMenu.querySelector('#remove-playlist');
-        if (removePlaylistItem) {
-            removePlaylistItem.onclick = () => {
-                const personalizedMessage = `Are you sure you want to remove playlist <br><strong>"${playlist.name}"</strong>? <br><br><small>This action cannot be undone.</small>`;
-                showCustomConfirm(
-                    'Confirm Playlist Removal',
-                    personalizedMessage,
-                    () => removePlaylist(playlist.name)
-                );
+
+    // If contextObj is a playlist (has songs array or isCreateNewCard), show playlist options
+    if (contextObj && (contextObj.songs || contextObj.isCreateNewCard)) {
+        if (contextObj.isCreateNewCard) {
+            playlistContextMenu.innerHTML = `
+                <div class="context-menu-item">
+                    <i class="fas fa-info-circle"></i>
+                    Create a new playlist
+                </div>
+            `;
+        } else {
+            playlistContextMenu.innerHTML = `
+                <div class="context-menu-item" id="remove-playlist">
+                    <i class="fas fa-trash"></i>
+                    Remove Playlist
+                </div>
+            `;
+            const removePlaylistItem = playlistContextMenu.querySelector('#remove-playlist');
+            if (removePlaylistItem) {
+                removePlaylistItem.onclick = () => {
+                    const personalizedMessage = `Are you sure you want to remove playlist <br><strong>\"${contextObj.name}\"</strong>? <br><br><small>This action cannot be undone.</small>`;
+                    showCustomConfirm(
+                        'Confirm Playlist Removal',
+                        personalizedMessage,
+                        () => removePlaylist(contextObj.name)
+                    );
+                    hidePlaylistContextMenu();
+                };
+            }
+        }
+    } else if (contextObj && (contextObj.name || contextObj.title)) {
+        // Assume contextObj is a song
+        // Get available playlists
+        const playlistOptions = Object.keys(playlists || {});
+        playlistContextMenu.innerHTML =
+            playlistOptions.length > 0 ?
+            `<div class="context-menu-item has-submenu">
+                <i class="fas fa-plus"></i>
+                Add to Playlist
+                <div class="context-submenu">
+                    ${playlistOptions.map(name => `
+                        <div class="context-menu-item" data-playlist="${name}">
+                            <i class="fas fa-list"></i>${name}
+                        </div>
+                    `).join('')}
+                    <div class="context-menu-divider"></div>
+                    <div class="context-menu-item" id="create-new-playlist-context">
+                        <i class="fas fa-plus"></i>Create New Playlist
+                    </div>
+                </div>
+            </div>`
+            :
+            `<div class="context-menu-item" id="create-new-playlist-context">
+                <i class="fas fa-plus"></i>Create New Playlist
+            </div>`;
+        // Add click handlers for playlist items
+        playlistContextMenu.querySelectorAll('.context-submenu .context-menu-item[data-playlist]').forEach(item => {
+            item.onclick = () => {
+                const playlistName = item.dataset.playlist;
+                addSongToPlaylist(playlistName, contextObj);
                 hidePlaylistContextMenu();
+            };
+        });
+        // Add handler for creating a new playlist
+        const createPlaylistItem = playlistContextMenu.querySelector('#create-new-playlist-context');
+        if (createPlaylistItem) {
+            createPlaylistItem.onclick = () => {
+                hidePlaylistContextMenu();
+                createPlaylistModal.style.display = 'flex';
+                newPlaylistNameInput.focus();
+                window.songToAddAfterCreate = contextObj;
+                // Modify the save button click handler temporarily
+                const originalSaveHandler = saveNewPlaylistBtn.onclick;
+                saveNewPlaylistBtn.onclick = async () => {
+                    await createNewPlaylist();
+                    if (window.songToAddAfterCreate) {
+                        const playlistName = newPlaylistNameInput.value.trim();
+                        if (playlistName) {
+                            addSongToPlaylist(playlistName, window.songToAddAfterCreate);
+                        }
+                        window.songToAddAfterCreate = null;
+                    }
+                    saveNewPlaylistBtn.onclick = originalSaveHandler;
+                };
             };
         }
     }
@@ -2210,58 +2306,30 @@ function showPlaylistContextMenu(e, playlist) {
     // Position and show menu
     playlistContextMenu.style.top = `${e.pageY}px`;
     playlistContextMenu.style.left = `${e.pageX}px`;
+    playlistContextMenu.style.zIndex = 9999;
     document.body.appendChild(playlistContextMenu);
-    setTimeout(() => playlistContextMenu.classList.add('active'), 10);
+    setTimeout(() => {
+        playlistContextMenu.classList.add('active');
+        playlistContextMenu.style.pointerEvents = 'all';
+    }, 10);
 
-    // Store current context playlist
-    currentContextPlaylist = playlist;
-    
-    // Add showing-context class to the target element (the playlist card)
-    if (e.target.closest('.playlist-card')) {
+    // Store current context
+    if (contextObj && contextObj.songs && e.target.closest('.playlist-card')) {
         playlistContextMenu.targetElement = e.target.closest('.playlist-card');
         playlistContextMenu.targetElement.classList.add('showing-context');
     }
+    currentContextPlaylist = contextObj;
 
-    // Stop immediate closing
     playlistContextMenu.addEventListener('click', (e) => {
         e.stopPropagation();
     });
-
-    // Hide on click outside
     const handleDocumentClick = (e) => {
         if (!playlistContextMenu.contains(e.target)) {
             hidePlaylistContextMenu();
         }
     };
-    
     document.addEventListener('click', handleDocumentClick);
-    
-    // Store reference to the handler for removal later
     playlistContextMenu.handleDocumentClick = handleDocumentClick;
-}
-
-function hidePlaylistContextMenu() {
-    if (playlistContextMenu) {
-        // Remove event listener to avoid memory leaks
-        if (playlistContextMenu.handleDocumentClick) {
-            document.removeEventListener('click', playlistContextMenu.handleDocumentClick);
-        }
-        
-        // Remove showing-context class from the target element
-        if (playlistContextMenu.targetElement) {
-            playlistContextMenu.targetElement.classList.remove('showing-context');
-        }
-        
-        playlistContextMenu.classList.remove('active');
-        
-        // Remove after transition
-        setTimeout(() => {
-            if (playlistContextMenu && playlistContextMenu.parentNode) {
-                playlistContextMenu.remove();
-            }
-            playlistContextMenu = null;
-        }, 100);
-    }
 }
 
 // Function to remove a playlist
