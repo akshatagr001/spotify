@@ -12,6 +12,7 @@
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/modals.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Debug script for hamburger menu - ensure it runs AFTER main.js -->
@@ -209,14 +210,23 @@
     <div id="custom-confirm-modal" class="modal">
         <div class="modal-content confirm-modal-content">
             <div class="modal-header">
-                <h3 id="confirm-title">Confirm Action</h3>
+                <h3 id="confirm-title">
+                    <i class="fas fa-question-circle" style="margin-right: 10px; color: var(--modal-warning);"></i>
+                    <span>Confirm Action</span>
+                </h3>
                 <button class="close-modal" id="close-confirm-modal"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <p id="confirm-message">Are you sure you want to proceed?</p>
                 <div class="confirm-actions">
-                    <button id="confirm-yes-btn" class="btn btn-danger">Yes, Remove</button>
-                    <button id="confirm-no-btn" class="btn btn-secondary">Cancel</button>
+                    <button id="confirm-yes-btn" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Yes, Remove</span>
+                    </button>
+                    <button id="confirm-no-btn" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        <span>Cancel</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -226,13 +236,19 @@
     <div id="custom-alert-modal" class="modal">
         <div class="modal-content alert-modal-content">
             <div class="modal-header">
-                <h3 id="alert-title">Notification</h3>
+                <h3 id="alert-title">
+                    <i class="fas fa-info-circle" style="margin-right: 10px; color: var(--modal-success);"></i>
+                    <span>Notification</span>
+                </h3>
                 <button class="close-modal" id="close-alert-modal"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <p id="alert-message">This is an alert message.</p>
                 <div class="alert-actions">
-                    <button id="alert-ok-btn" class="btn btn-primary">OK</button>
+                    <button id="alert-ok-btn" class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        <span>Done</span>
+                    </button>
                 </div>
             </div>
         </div>

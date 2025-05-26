@@ -1451,9 +1451,26 @@ function showContextMenu(e, song) {
     }
 
     // Position and show menu
-    contextMenu.style.top = `${e.pageY}px`;
-    contextMenu.style.left = `${e.pageX}px`;
     document.body.appendChild(contextMenu);
+    
+    // Get menu dimensions and window bounds
+    const menuRect = contextMenu.getBoundingClientRect();
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Calculate if menu would overflow
+    const overflowRight = e.clientX + menuRect.width > windowWidth;
+    const overflowBottom = e.clientY + menuRect.height > windowHeight;
+    
+    // Position menu - if it would overflow, show it on the left/above instead
+    contextMenu.style.left = overflowRight ? 
+        `${e.pageX - menuRect.width}px` : 
+        `${e.pageX}px`;
+    
+    contextMenu.style.top = overflowBottom ? 
+        `${e.pageY - menuRect.height}px` : 
+        `${e.pageY}px`;
+    
     setTimeout(() => contextMenu.classList.add('active'), 10);
 
     // Stop immediate closing
@@ -2176,7 +2193,7 @@ function initLastSessionScrollControls() {
 }
 
 // Function to show custom confirmation modal
-function showCustomConfirm(title, message, onConfirm) {
+function showCustomConfirm(title, message, onConfirm, type = 'warning', confirmText = 'Yes', cancelText = 'Cancel') {
     const confirmModal = document.getElementById('custom-confirm-modal');
     const confirmTitle = document.getElementById('confirm-title');
     const confirmMessage = document.getElementById('confirm-message');
@@ -2186,15 +2203,32 @@ function showCustomConfirm(title, message, onConfirm) {
 
     if (!confirmModal || !confirmTitle || !confirmMessage || !confirmYesBtn || !confirmNoBtn || !closeConfirmModalBtn) {
         console.error('Custom confirm modal elements not found');
-        // Fallback to default confirm if modal is not found
         if (confirm(message)) {
             onConfirm();
         }
         return;
     }
 
-    confirmTitle.textContent = title;
-    confirmMessage.innerHTML = message; // Use innerHTML to allow for styled messages
+    // Configure title with icon and color based on type
+    const iconMap = {
+        'warning': 'fa-exclamation-triangle',
+        'danger': 'fa-exclamation-circle',
+        'info': 'fa-question-circle',
+        'success': 'fa-check-circle'
+    };
+
+    const colorMap = {
+        'warning': 'var(--modal-warning)',
+        'danger': 'var(--modal-danger)',
+        'info': 'var(--modal-text)',
+        'success': 'var(--modal-success)'
+    };
+
+    const icon = iconMap[type] || iconMap.warning;
+    const color = colorMap[type] || colorMap.warning;
+
+    confirmTitle.innerHTML = `<i class="fas ${icon}" style="margin-right: 10px; color: ${color};"></i><span>${title}</span>`;
+    confirmMessage.innerHTML = message;
     
     // Remove previous event listeners to prevent multiple calls
     const newYesBtn = confirmYesBtn.cloneNode(true);
@@ -2203,27 +2237,47 @@ function showCustomConfirm(title, message, onConfirm) {
     const newNoBtn = confirmNoBtn.cloneNode(true);
     confirmNoBtn.parentNode.replaceChild(newNoBtn, confirmNoBtn);
 
-    newYesBtn.onclick = () => {
+    // Update button text and styling
+    newYesBtn.querySelector('span').textContent = confirmText;
+    newNoBtn.querySelector('span').textContent = cancelText;
+    
+    // Set appropriate button styling based on type
+    newYesBtn.className = `btn btn-${type === 'danger' ? 'danger' : 'primary'}`;
+    
+    // Set appropriate button icons
+    const yesIcon = type === 'danger' ? 'fa-trash-alt' : 'fa-check';
+    newYesBtn.querySelector('i').className = `fas ${yesIcon}`;
+
+    const closeModal = () => {
         confirmModal.style.display = 'none';
+    };
+
+    newYesBtn.onclick = () => {
+        closeModal();
         onConfirm();
     };
 
-    newNoBtn.onclick = () => {
-        confirmModal.style.display = 'none';
-    };
-    
-    closeConfirmModalBtn.onclick = () => {
-        confirmModal.style.display = 'none';
-    };
+    newNoBtn.onclick = closeModal;
+    closeConfirmModalBtn.onclick = closeModal;
     
     // Handle Escape key to close modal
     const handleEscKey = (event) => {
         if (event.key === 'Escape') {
-            confirmModal.style.display = 'none';
-            document.removeEventListener('keydown', handleEscKey); // Clean up listener
+            closeModal();
+            document.removeEventListener('keydown', handleEscKey);
         }
     };
     document.addEventListener('keydown', handleEscKey);
+
+    // Add key handler for Enter and Space
+    const handleKeyPress = (event) => {
+        if (event.key === 'Enter') {
+            closeModal();
+            onConfirm();
+            document.removeEventListener('keydown', handleKeyPress);
+        }
+    };
+    document.addEventListener('keydown', handleKeyPress);
 
     confirmModal.style.display = 'flex';
 }
@@ -2327,10 +2381,28 @@ function showPlaylistContextMenu(e, contextObj) {
     }
 
     // Position and show menu
-    playlistContextMenu.style.top = `${e.pageY}px`;
-    playlistContextMenu.style.left = `${e.pageX}px`;
-    playlistContextMenu.style.zIndex = 9999;
     document.body.appendChild(playlistContextMenu);
+    
+    // Get menu dimensions and window bounds
+    const menuRect = playlistContextMenu.getBoundingClientRect();
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Calculate if menu would overflow
+    const overflowRight = e.clientX + menuRect.width > windowWidth;
+    const overflowBottom = e.clientY + menuRect.height > windowHeight;
+    
+    // Position menu - if it would overflow, show it on the left/above instead
+    playlistContextMenu.style.left = overflowRight ? 
+        `${e.pageX - menuRect.width}px` : 
+        `${e.pageX}px`;
+    
+    playlistContextMenu.style.top = overflowBottom ? 
+        `${e.pageY - menuRect.height}px` : 
+        `${e.pageY}px`;
+    
+    playlistContextMenu.style.zIndex = 9999;
+    
     setTimeout(() => {
         playlistContextMenu.classList.add('active');
         playlistContextMenu.style.pointerEvents = 'all';
@@ -2430,53 +2502,132 @@ async function removePlaylist(playlistDisplayName) {
     }
 }
 
-// Notification function
-function showNotification(message, type = 'info') {
+// Function to show custom alert modal
+function showCustomAlert(title, message, type = 'info', onClose) {
+    const alertModal = document.getElementById('custom-alert-modal');
+    const alertTitle = document.getElementById('alert-title');
+    const alertMessage = document.getElementById('alert-message');
+    const alertOkBtn = document.getElementById('alert-ok-btn');
+    const closeAlertModalBtn = document.getElementById('close-alert-modal');
+
+    if (!alertModal || !alertTitle || !alertMessage || !alertOkBtn || !closeAlertModalBtn) {
+        console.error('Custom alert modal elements not found');
+        alert(message);
+        if (onClose) onClose();
+        return;
+    }
+
+    const iconMap = {
+        'success': 'fa-check-circle',
+        'error': 'fa-exclamation-circle',
+        'warning': 'fa-exclamation-triangle',
+        'info': 'fa-info-circle'
+    };
+
+    const colorMap = {
+        'success': 'var(--modal-success)',
+        'error': 'var(--modal-danger)',
+        'warning': 'var(--modal-warning)',
+        'info': 'var(--modal-text)'
+    };
+
+    const icon = iconMap[type] || iconMap.info;
+    const color = colorMap[type] || colorMap.info;
+
+    alertTitle.innerHTML = `<i class="fas ${icon}" style="margin-right: 10px; color: ${color};"></i><span>${title}</span>`;
+    alertMessage.innerHTML = message;
+
+    const newOkBtn = alertOkBtn.cloneNode(true);
+    alertOkBtn.parentNode.replaceChild(newOkBtn, alertOkBtn);
+    
+    const newCloseBtn = closeAlertModalBtn.cloneNode(true);
+    closeAlertModalBtn.parentNode.replaceChild(newCloseBtn, closeAlertModalBtn);
+
+    const closeModal = () => {
+        alertModal.style.display = 'none';
+        if (onClose) onClose();
+    };
+
+    newOkBtn.onclick = closeModal;
+    newCloseBtn.onclick = closeModal;
+
+    const handleEscKey = (event) => {
+        if (event.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', handleEscKey);
+        }
+    };
+    document.addEventListener('keydown', handleEscKey);
+
+    alertModal.style.display = 'flex';
+}
+
+// Enhanced notification function with more types and custom duration
+function showNotification(message, type = 'info', duration = 3000) {
     // Remove any existing notifications
     const existingNotification = document.querySelector('.notification');
     if (existingNotification) {
         existingNotification.remove();
     }
+
+    const iconMap = {
+        'success': 'fa-check-circle',
+        'error': 'fa-exclamation-circle',
+        'warning': 'fa-exclamation-triangle',
+        'info': 'fa-info-circle'
+    };
+
+    const icon = iconMap[type] || iconMap.info;
     
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.innerHTML = `
         <div class="notification-content">
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i>
+            <i class="fas ${icon}"></i>
             <span>${message}</span>
         </div>
-        <button class="close-notification"><i class="fas fa-times"></i></button>
+        <button class="close-notification" aria-label="Close notification">
+            <i class="fas fa-times"></i>
+        </button>
     `;
     
     // Add to body
     document.body.appendChild(notification);
     
     // Show with animation
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         notification.classList.add('show');
-    }, 10);
+    });
     
     // Add close button functionality
     const closeBtn = notification.querySelector('.close-notification');
+    const closeNotification = () => {
+        notification.classList.remove('show');
+        // Wait for animation to complete before removing
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 300);
+    };
+
     if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
-        });
+        closeBtn.addEventListener('click', closeNotification);
     }
     
-    // Auto hide after 3 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 300);
+    // Auto hide after specified duration
+    if (duration > 0) {
+        setTimeout(closeNotification, duration);
+    }
+
+    // Add key handler for accessibility
+    notification.setAttribute('role', 'alert');
+    notification.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeNotification();
         }
-    }, 3000);
+    });
 }
 
 // Ensure clicking on the progress bar updates the playback position correctly

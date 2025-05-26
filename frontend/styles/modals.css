@@ -1,0 +1,220 @@
+/* Custom Modal Styles for Musicalya */
+:root {
+    --modal-bg: #282828;
+    --modal-overlay: rgba(0, 0, 0, 0.8);
+    --modal-text: #ffffff;
+    --modal-secondary-text: #b3b3b3;
+    --modal-border: rgba(255, 255, 255, 0.1);
+    --modal-hover: #333333;
+    --modal-success: #1db954;
+    --modal-danger: #e91429;
+    --modal-warning: #ffbe00;
+    --modal-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Base Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--modal-overlay);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: var(--modal-bg);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: var(--modal-shadow);
+    animation: modalSlideUp 0.3s ease-out;
+    border: 1px solid var(--modal-border);
+}
+
+/* Modal Animation */
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--modal-border);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--modal-text);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.close-modal {
+    background: transparent;
+    border: none;
+    color: var(--modal-secondary-text);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+}
+
+.close-modal:hover {
+    color: var(--modal-text);
+    background: var(--modal-hover);
+    transform: scale(1.1);
+}
+
+/* Modal Body */
+.modal-body {
+    padding: 20px;
+    color: var(--modal-text);
+}
+
+.modal-body p {
+    margin: 0 0 20px 0;
+    color: var(--modal-secondary-text);
+    line-height: 1.5;
+}
+
+/* Modal Actions */
+.modal-actions,
+.confirm-actions,
+.alert-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* Button Styles */
+.btn {
+    padding: 12px 24px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-transform: uppercase;
+}
+
+.btn-primary {
+    background: var(--modal-success);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #1ed760;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--modal-text);
+    border: 1px solid var(--modal-border);
+}
+
+.btn-secondary:hover {
+    background: var(--modal-hover);
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: var(--modal-danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #fa1f3d;
+    transform: translateY(-2px);
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--modal-secondary-text);
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--modal-border);
+    border-radius: 4px;
+    color: var(--modal-text);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+    border-color: var(--modal-success);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.3);
+}
+
+/* Success Message Animation */
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Custom Styles for Alert Types */
+.alert-modal-content.success .modal-header {
+    border-bottom-color: var(--modal-success);
+}
+
+.alert-modal-content.error .modal-header {
+    border-bottom-color: var(--modal-danger);
+}
+
+.alert-modal-content.warning .modal-header {
+    border-bottom-color: var(--modal-warning);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.8rem;
+    }
+
+    .modal-header h3 {
+        font-size: 1.2rem;
+    }
+}
