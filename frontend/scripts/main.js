@@ -1451,26 +1451,9 @@ function showContextMenu(e, song) {
     }
 
     // Position and show menu
+    contextMenu.style.top = `${e.pageY}px`;
+    contextMenu.style.left = `${e.pageX}px`;
     document.body.appendChild(contextMenu);
-    
-    // Get menu dimensions and window bounds
-    const menuRect = contextMenu.getBoundingClientRect();
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    
-    // Calculate if menu would overflow
-    const overflowRight = e.clientX + menuRect.width > windowWidth;
-    const overflowBottom = e.clientY + menuRect.height > windowHeight;
-    
-    // Position menu - if it would overflow, show it on the left/above instead
-    contextMenu.style.left = overflowRight ? 
-        `${e.pageX - menuRect.width}px` : 
-        `${e.pageX}px`;
-    
-    contextMenu.style.top = overflowBottom ? 
-        `${e.pageY - menuRect.height}px` : 
-        `${e.pageY}px`;
-    
     setTimeout(() => contextMenu.classList.add('active'), 10);
 
     // Stop immediate closing

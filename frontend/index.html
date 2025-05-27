@@ -19,13 +19,13 @@
     <script>
         // Run this after the window loads to ensure all scripts have loaded
         window.addEventListener('load', function() {
-            
+            console.log('Initializing debug script on window load (index.html)');
             
             // Fallback toggleMenu (if needed by other parts, but main.js should define it)
             if (typeof window.toggleMenu !== 'function') {
-                
+                console.log('DEBUG: ADDING missing window.toggleMenu function (index.html)');
                 window.toggleMenu = function(forceClose) {
-                    
+                    console.log('DEBUG: Fallback toggleMenu called (index.html)');
                     if (typeof window.toggleHamburgerMenu === 'function') {
                         window.toggleHamburgerMenu(forceClose);
                     } else {
@@ -40,18 +40,25 @@
             //     // window.initMenu(); // REMOVED TO PREVENT DOUBLE INITIALIZATION
             // }
             
-            // // Show debug info with a delay
-            // setTimeout(function() {
+            // Show debug info with a delay
+            setTimeout(function() {
+                console.log('DEBUG INFO (from index.html):');
+                console.log('  window.toggleHamburgerMenu exists:', typeof window.toggleHamburgerMenu === 'function');
+                console.log('  window.initMenu exists:', typeof window.initMenu === 'function');
                 
-            //     const menuEl = document.querySelector('.hamburger-menu');
-            //     const menuContent = document.querySelector('.menu-content');
-               
-            //     if (menuEl) {
-                    
-            //     }
-            //     if (menuContent) {
-            //         }
-            // }, 1500); // Increased delay to ensure main.js has run
+                const menuEl = document.querySelector('.hamburger-menu');
+                const menuContent = document.querySelector('.menu-content');
+                console.log('  Menu element (.hamburger-menu) exists:', !!menuEl);
+                console.log('  Menu content (.menu-content) exists:', !!menuContent);
+                
+                if (menuEl) {
+                    console.log('  Menu element active class:', menuEl.classList.contains('active'));
+                }
+                if (menuContent) {
+                    console.log('  Menu content display style:', window.getComputedStyle(menuContent).display);
+                    console.log('  Menu content visibility style:', window.getComputedStyle(menuContent).visibility);
+                }
+            }, 1500); // Increased delay to ensure main.js has run
         });
     </script>
 
