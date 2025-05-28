@@ -508,38 +508,14 @@ function updateProgressDisplay(percentage) {
 }
 
 // Replace progress bar event listener
-progressBar.addEventListener('click', function progressBarClickHandler(e) {
-    if (!isValidAudioState()) {
-        console.warn('Audio not ready - please wait for song to load');
-        return;
-    }
-
-    const bounds = progressBar.getBoundingClientRect();
-    const width = bounds.width;
-    
-    if (width <= 0) return;
-
-    const x = Math.min(Math.max(e.clientX - bounds.left, 0), width);
-    const percentage = x / width;
-    const newTime = percentage * audioPlayer.duration;
-
-    if (!isFinite(newTime) || newTime < 0) return;
-
-    try {
-        audioPlayer.currentTime = Math.min(newTime, audioPlayer.duration);
-        updateProgressDisplay(percentage);
-    } catch (error) {
-        console.error('Seek failed:', error);
-    }
-});
 
 // Update playSong function
 function playSong(index, forceList) {
     // Clean up previous audio source
     if (audioPlayer) {
         audioPlayer.pause();
-        audioPlayer.removeAttribute('src');
-        audioPlayer.load();
+        // audioPlayer.removeAttribute('src');
+        // audioPlayer.load();
     }
 
     const targetSongList = forceList || songList;
@@ -564,7 +540,11 @@ function playSong(index, forceList) {
 
     const audioSrc = `${API_URL}/stream/${encodeURIComponent(audioName)}`;
     audioPlayer.src = audioSrc;
-    
+    progressBar.value = 0;
+    progressBar.style.setProperty('--value', '0%');
+    currentTimeEl.textContent = '0:00';
+    durationEl.textContent = '0:00';
+
     const onLoaded = () => {
         audioPlayer.removeEventListener('loadedmetadata', onLoaded);
         if (!isValidAudioState()) {
@@ -592,35 +572,47 @@ function playSong(index, forceList) {
         currentButton = songListDiv.children[currentIndex];
         currentButton.classList.add('playing-song');
     }
-
+    
     if (nowPlayingImg) {
         nowPlayingImg.src = song.image
-            ? `${API_URL}/static/images/${song.image}`
+        ? `${API_URL}/static/images/${song.image}`
             : 'default.jpg';
     }
     if (nowPlayingTitle) {
         nowPlayingTitle.textContent = song.title || song.name.replace(/\.(mp3|m4a)$/, '');
     }
 }
-
-// Progress bar interaction
-progressBar.addEventListener('mousedown', (e) => {
-    if (!audioPlayer.duration) return;
-    
-    isDragging = true;
-    wasPlaying = !audioPlayer.paused;
-    if (wasPlaying) {
-        audioPlayer.pause();
-    }
-    updateProgressFromEvent(e);
-    progressBar.classList.add('dragging');
-    
-    // Ensure the progress bar updates immediately
+function updateProgressFromEvent(e, setAudioTime = false) {
+    if (!audioPlayer.duration || !isFinite(audioPlayer.duration)) return;
     const bounds = progressBar.getBoundingClientRect();
     const x = e.clientX - bounds.left;
-    const percentage = (x / bounds.width);
-    const newTime = audioPlayer.duration * percentage;
-    audioPlayer.currentTime = newTime;
+    const width = bounds.width;
+    const percentage = Math.min(Math.max(x / width, 0), 1);
+
+    // Update progress bar value and UI
+    progressBar.value = percentage * 100;
+    progressBar.style.setProperty('--value', `${percentage * 100}%`);
+    const newTime = percentage * audioPlayer.duration;
+    currentTimeEl.textContent = formatTime(newTime);
+
+    // Only set audio time if requested (on mouseup/touchend/click)
+    if (setAudioTime) {
+        try {
+            audioPlayer.currentTime = newTime;
+        } catch (error) {
+            console.error('Error setting currentTime:', error);
+        }
+    }
+    audioPlayer.dispatchEvent(new Event('seeking'));
+}// Dispatch a seeking event to ensure the audio player updates
+
+progressBar.addEventListener('mousedown', (e) => {
+    if (!audioPlayer.duration) return;
+    isDragging = true;
+    wasPlaying = !audioPlayer.paused;
+    if (wasPlaying) audioPlayer.pause();
+    updateProgressFromEvent(e);
+    progressBar.classList.add('dragging');
 });
 
 document.addEventListener('mousemove', (e) => {
@@ -633,57 +625,15 @@ document.addEventListener('mouseup', (e) => {
     if (isDragging) {
         isDragging = false;
         progressBar.classList.remove('dragging');
-        
-        // Update the progress one final time
-        updateProgressFromEvent(e);
-        
-        // Resume playback if it was playing before dragging
-        if (wasPlaying) {
-            // Wait for seeking to complete before playing
-            const onSeeked = () => {
-                audioPlayer.play()
-                    .then(() => {
-                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    });
-                audioPlayer.removeEventListener('seeked', onSeeked);
-            };
-            audioPlayer.addEventListener('seeked', onSeeked);
-        }
+        updateProgressFromEvent(e); // Final update
+        if (wasPlaying) audioPlayer.play();
         wasPlaying = false;
     }
 });
 
-function updateProgressFromEvent(e) {
-    if (!audioPlayer.duration || !isFinite(audioPlayer.duration)) return;
-    
-    const bounds = progressBar.getBoundingClientRect();
-    const x = e.clientX - bounds.left;
-    const width = bounds.width;
-    const percentage = Math.min(Math.max(x / width, 0), 1);
-    
-    // Update progress bar value
-    progressBar.value = percentage * 100;
-    progressBar.style.setProperty('--value', `${percentage * 100}%`);
-    
-    // Calculate and update the new time
-    const newTime = percentage * audioPlayer.duration;
-    
-    // Update the display before setting currentTime
-    currentTimeEl.textContent = formatTime(newTime);
-    
-    // Set the new time
-    try {
-        audioPlayer.currentTime = newTime;
-    } catch (error) {
-        console.error('Error setting currentTime:', error);
-    }
-    
-    // Dispatch a seeking event to ensure the audio player updates
-    audioPlayer.dispatchEvent(new Event('seeking'));
-}
-
 // Touch events for mobile
 progressBar.addEventListener('touchstart', (e) => {
+    if (!audioPlayer.duration) return;
     isDragging = true;
     wasPlaying = !audioPlayer.paused;
     if (wasPlaying) audioPlayer.pause();
@@ -702,77 +652,32 @@ progressBar.addEventListener('touchend', (e) => {
     if (isDragging) {
         isDragging = false;
         progressBar.classList.remove('dragging');
-        
-        // Update one final time with the last touch position
         if (e.changedTouches.length > 0) {
             updateProgressFromEvent(e.changedTouches[0]);
         }
-        
-        // Do not resume playback automatically after seeking
-        // wasPlaying = false;
-    }
-});
-
-// // Enhance mouse events
-// progressBar.addEventListener('mousedown', (e) => {
-//     isDragging = true;
-//     wasPlaying = !audioPlayer.paused;
-//     if (wasPlaying) audioPlayer.pause();
-//     progressBar.classList.add('seeking');
-    
-//     // Update position immediately on mousedown
-//     const bounds = progressBar.getBoundingClientRect();
-//     const x = e.clientX - bounds.left;
-//     const percentage = Math.min(Math.max(x / bounds.width, 0), 1);
-//     progressBar.value = percentage * 100;
-// });
-
-progressBar.addEventListener('mousemove', (e) => {
-    if (isDragging && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
-        const bounds = progressBar.getBoundingClientRect();
-        const x = e.clientX - bounds.left;
-        const percentage = Math.min(Math.max(x / bounds.width, 0), 1);
-        progressBar.value = percentage * 100;
-        progressBar.style.setProperty('--value', `${percentage * 100}%`);
-        const time = percentage * audioPlayer.duration;
-        currentTimeEl.textContent = formatTime(time);
-        
-        // Show preview time tooltip
-        const tooltip = progressBar.querySelector('.progress-tooltip') || 
-                       (() => {
-                           const tip = document.createElement('div');
-                           tip.className = 'progress-tooltip';
-                           progressBar.appendChild(tip);
-                           return tip;
-                       })();
-        
-        tooltip.textContent = formatTime(time);
-        tooltip.style.left = `${x}px`;
-        tooltip.style.display = 'block';
-    }
-});
-
-document.addEventListener('mouseup', (e) => {
-    if (isDragging) {
-        isDragging = false;
-        progressBar.classList.remove('dragging');
-        
-        // Update the progress one final time
-        updateProgressFromEvent(e);
-        
-        // Resume playback if it was playing before dragging
-        if (wasPlaying) {
-            // Wait for seeking to complete before playing
-            const onSeeked = () => {
-                audioPlayer.play()
-                    .then(() => {
-                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    });
-                audioPlayer.removeEventListener('seeked', onSeeked);
-            };
-            audioPlayer.addEventListener('seeked', onSeeked);
-        }
+        if (wasPlaying) audioPlayer.play();
         wasPlaying = false;
+    }
+});
+
+progressBar.addEventListener('click', function progressBarClickHandler(e) {
+    if (!isValidAudioState()) {
+        console.warn('Audio not ready - please wait for song to load');
+        return;
+    }
+    const bounds = progressBar.getBoundingClientRect();
+    const width = bounds.width;
+    if (width <= 0) return;
+    const x = Math.min(Math.max(e.clientX - bounds.left, 0), width);
+    const percentage = x / width;
+    const newTime = percentage * audioPlayer.duration;
+    if (!isFinite(newTime) || newTime < 0) return;
+
+    try {
+        audioPlayer.currentTime = Math.min(newTime, audioPlayer.duration);
+        updateProgressDisplay(percentage);
+    } catch (error) {
+        console.error('Seek failed:', error);
     }
 });
 
@@ -1077,14 +982,6 @@ document.addEventListener('DOMContentLoaded', () => {
         shuffleBtn.addEventListener('click', () => {
             shuffleMode = !shuffleMode;
             shuffleBtn.classList.toggle('active');
-        });
-    }
-
-    if (progressBar) {
-        progressBar.addEventListener('click', (e) => {
-            const bounds = progressBar.getBoundingClientRect();
-            const percent = (e.clientX - bounds.left) / bounds.width;
-            audioPlayer.currentTime = percent * audioPlayer.duration;
         });
     }
 
@@ -1568,6 +1465,33 @@ async function addSongToPlaylist(playlistName, song) {
         console.error('Error adding song to playlist:', error);
         showNotification('Network error adding song to playlist', 'error');
     }
+}
+
+// Add a repeat button functionality
+const repeatButton = document.getElementById('repeat-button');
+let isRepeatOn = false;
+
+if (repeatButton) {
+    // Change color on hover
+    repeatButton.addEventListener('mouseenter', () => {
+        repeatButton.style.color = 'yellow';
+    });
+
+    repeatButton.addEventListener('mouseleave', () => {
+        repeatButton.style.color = isRepeatOn ? 'green' : '';
+    });
+
+    // Toggle repeat functionality
+    repeatButton.addEventListener('click', () => {
+        isRepeatOn = !isRepeatOn;
+        repeatButton.style.color = isRepeatOn ? 'green' : '';
+
+        if (isRepeatOn) {
+            audioPlayer.loop = true;
+        } else {
+            audioPlayer.loop = false;
+        }
+    });
 }
 
 // Playlist drawer functionality
@@ -2614,20 +2538,29 @@ function showNotification(message, type = 'info', duration = 3000) {
 }
 
 // Ensure clicking on the progress bar updates the playback position correctly
-progressBar.addEventListener('click', (e) => {
-    if (!audioPlayer.duration) return;
 
-    const bounds = progressBar.getBoundingClientRect();
-    const x = e.clientX - bounds.left;
-    const width = bounds.width;
-    const percentage = Math.min(Math.max(x / width, 0), 1);
-
-    // Update the audio player's current time
-    const newTime = percentage * audioPlayer.duration;
-    audioPlayer.currentTime = newTime;
-
-    // Update the progress bar and current time display
-    progressBar.value = percentage * 100;
-    progressBar.style.setProperty('--value', `${percentage * 100}%`);
-    currentTimeEl.textContent = formatTime(newTime);
+// Ensure play/pause button reflects the current state of the audio player
+audioPlayer.addEventListener('play', () => {
+    if (playPauseBtn) {
+        playPauseBtn.classList.add('playing');
+        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    }
 });
+
+audioPlayer.addEventListener('pause', () => {
+    if (playPauseBtn) {
+        playPauseBtn.classList.remove('playing');
+        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+    }
+});
+
+// Initialize the play/pause button state on page load
+if (playPauseBtn) {
+    if (!audioPlayer.paused) {
+        playPauseBtn.classList.add('playing');
+        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    } else {
+        playPauseBtn.classList.remove('playing');
+        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+    }
+}
