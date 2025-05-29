@@ -12,8 +12,8 @@ let shuffleMode = false;
 let isDragging = false;
 let wasPlaying = false;
 let searchTimeout;
-
-// Add a context menu for playlists
+let userToken = null;
+let userEmail = null;
 let playlistContextMenu = null;
 let currentContextPlaylist = null;
 
@@ -240,7 +240,28 @@ if (document.readyState === 'loading') {
     // DOM is already ready, or this script is deferred
     window.initMenu();
 }
-
+// function onGoogleSignIn(googleUser) {
+//     // For Google Identity Services
+//     const credential = googleUser.credential;
+//     // Send this credential to your backend for verification and to create/get the user
+//     fetch(`${API_URL}/auth/google`, {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ credential })
+//     })
+//     .then(res => res.json())
+//     .then(data => {
+//         userToken = data.token; // JWT or session token from your backend
+//         userEmail = data.email;
+//         localStorage.setItem('userToken', userToken);
+//         localStorage.setItem('userEmail', userEmail);
+//         showNotification('Logged in successfully!', 'success');
+//         // Optionally hide login UI and show app UI
+//         // Reload user data (playlists, recommendations, etc.)
+//         fetchUserData();
+//     })
+//     .catch(() => showNotification('Login failed', 'error'));
+// }
 // Initialize hamburger menu functionality
 // document.addEventListener('DOMContentLoaded', function() {
 //     // This code has been replaced by the window.initMenu function

@@ -14,6 +14,9 @@
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/modals.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Add this inside <head> -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     
     <!-- Debug script for hamburger menu - ensure it runs AFTER main.js -->
     <script>
@@ -93,6 +96,29 @@
         <div class="menu-content" style="transition: all 0.3s ease;">
             <a href="#" class="menu-item" id="show-playlists"><i class="fas fa-list"></i> Playlists</a>
             <a href="https://spotify-backend-6mr0.onrender.com/download/setup" class="download-link" target="_blank"><i class="fas fa-download"></i> Download App</a>
+        </div>
+    </div>
+    <!-- Google Sign-In Integration -->
+    <div id="login-section" style="margin: 20px; text-align: right;">
+        <!-- Google Sign-In Button -->
+        <div id="g_id_onload"
+            data-client_id="999480998528-b5gsjv3klsudbr7hhk78sso30s88dnjp.apps.googleusercontent.com"
+            data-callback="handleCredentialResponse"
+            data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin"
+            data-type="standard"
+            data-size="large"
+            data-theme="outline"
+            data-text="sign_in_with"
+            data-shape="rectangular"
+            data-logo_alignment="left">
+        </div>
+
+        <!-- Display logged-in user info -->
+        <div id="user-info" style="display:none; margin-top: 10px;">
+            <p>👋 Welcome, <span id="user-name"></span></p>
+            <button onclick="logout()" class="btn btn-secondary">Logout</button>
         </div>
     </div>
 
@@ -319,5 +345,36 @@
             z-index: 2003 !important;
         }
     </style>
+    <script>
+        function handleCredentialResponse(response) {
+            const data = parseJwt(response.credential);
+            console.log("Google login success:", data);
+            document.getElementById("user-info").style.display = "block";
+            document.getElementById("user-name").textContent = data.name;
+
+            // Optionally hide sign-in button after login
+            document.querySelector(".g_id_signin").style.display = "none";
+        }
+
+        function logout() {
+            google.accounts.id.disableAutoSelect();
+            document.getElementById("user-info").style.display = "none";
+            document.querySelector(".g_id_signin").style.display = "block";
+            alert("You have been logged out.");
+        }
+
+        // Utility: Decode JWT token
+        function parseJwt(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64).split('').map(function (c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join('')
+            );
+            return JSON.parse(jsonPayload);
+        }
+    </script>
+
 </body>
 </html>
