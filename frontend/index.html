@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>musicalya</title>
+    <title>Musicalya</title>
     
     <!-- ✅ SEO Essentials -->
     <meta name="robots" content="index, follow">
@@ -87,21 +87,26 @@
     </style>
 </head>
 <body>
-    <div class="hamburger-menu">
-        <div class="menu-lines">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>        
-        <div class="menu-content" style="transition: all 0.3s ease;">
-            <a href="#" class="menu-item" id="show-playlists"><i class="fas fa-list"></i> Playlists</a>
-            <a href="https://spotify-backend-6mr0.onrender.com/download/setup" class="download-link" target="_blank"><i class="fas fa-download"></i> Download App</a>
+    <!-- Header Navigation -->
+    <div class="header-nav">
+        <div class="header-left">
+            <button class="header-btn" id="playlists-header-btn" title="Playlists">
+                <i class="fas fa-list"></i>
+            </button>
+        </div>
+        <div class="header-right">
+            <button class="header-btn" id="settings-header-btn" title="Settings">
+                <i class="fas fa-cog"></i>
+            </button>
+            <button class="header-btn download-header-btn" id="download-header-btn" title="Download App">
+                <i class="fas fa-download"></i>
+            </button>
         </div>
     </div>
     <!-- Google Sign-In Integration -->
-    <div id="login-section" style="margin: 20px; text-align: right;">
+    <!-- <div id="login-section" style="margin: 20px; text-align: right;"> -->
         <!-- Google Sign-In Button -->
-        <div id="g_id_onload"
+        <!-- <div id="g_id_onload"
             data-client_id="999480998528-b5gsjv3klsudbr7hhk78sso30s88dnjp.apps.googleusercontent.com"
             data-callback="handleCredentialResponse"
             data-auto_prompt="false">
@@ -113,7 +118,7 @@
             data-text="sign_in_with"
             data-shape="rectangular"
             data-logo_alignment="left">
-        </div>
+        </div> -->
 
         <!-- Display logged-in user info -->
         <div id="user-info" style="display:none; margin-top: 10px;">
@@ -167,10 +172,16 @@
         <div id="playlist-songs" class="playlist-songs"></div>
     </div>
 
-    <h1 id="app-title" class="app-title">🎵 Musicalya 🎵</h1>
+    <!-- <h1 id="app-title" class="app-title">🎵 Musicalya</h1> -->
 
     <div class="container">
         <div class="main-content">
+            <div class="top-controls">
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="What do you want to listen">
+                    <button id="search-btn"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
             <!-- For You Section -->
             <div class="for-you-section">
                 <h2>For You</h2>
@@ -187,12 +198,6 @@
                 </div>
             </div>
 
-            <div class="top-controls">
-                <div class="search-container">
-                    <input type="text" id="search-input" placeholder="Search songs...">
-                    <button id="search-btn"><i class="fas fa-search"></i></button>
-                </div>
-            </div>
 
             <div id="song-list"></div>
         </div>

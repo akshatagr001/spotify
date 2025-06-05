@@ -105,140 +105,57 @@ function syncCurrentSongState() {
     }
 }
 
-// Global function to toggle the hamburger menu - DEFINE BEFORE USE
-window.toggleHamburgerMenu = function(forceClose = false) {
-    console.log('Global toggleHamburgerMenu function called', forceClose ? '(force close)' : '');
-    const hamburgerMenu = document.querySelector('.hamburger-menu');
-    const menuContent = document.querySelector('.menu-content');
+// Initialize header navigation
+function initHeaderNav() {
+    console.log('Initializing header navigation');
     
-    if (!hamburgerMenu || !menuContent) {
-        console.error('Cannot toggle menu - elements not found');
-        return;
-    }
+    // Get header button elements
+    const playlistsBtn = document.getElementById('playlists-header-btn');
+    const downloadBtn = document.getElementById('download-header-btn');
+    const settingsBtn = document.getElementById('settings-header-btn');
     
-    // Toggle the active class
-    if (forceClose) {
-        hamburgerMenu.classList.remove('active');
-        // Explicitly hide menu content
-        menuContent.style.setProperty('visibility', 'hidden', 'important');
-        menuContent.style.setProperty('opacity', '0', 'important');
-        menuContent.style.setProperty('pointer-events', 'none', 'important');
-        // Add display:none after a short delay to allow for transition
-        setTimeout(() => {
-            if (!hamburgerMenu.classList.contains('active')) {
-                menuContent.style.setProperty('display', 'none', 'important');
-            }
-        }, 300);
-    } else {
-        const willBeActive = !hamburgerMenu.classList.contains('active');
-        hamburgerMenu.classList.toggle('active');
-        
-        // Explicitly show/hide menu content based on active state
-        if (willBeActive) {
-            // First ensure display is set to block before other properties
-            menuContent.style.setProperty('display', 'block', 'important');
-            // Allow a short delay for display:block to take effect
-            setTimeout(() => {
-                menuContent.style.setProperty('visibility', 'visible', 'important');
-                menuContent.style.setProperty('opacity', '1', 'important');
-                menuContent.style.setProperty('transform', 'translateY(0)', 'important');
-                menuContent.style.setProperty('pointer-events', 'auto', 'important');
-            }, 10);
-        } else {
-            menuContent.style.setProperty('visibility', 'hidden', 'important');
-            menuContent.style.setProperty('opacity', '0', 'important');
-            menuContent.style.setProperty('pointer-events', 'none', 'important');
-            // Add display:none after a short delay to allow for transition
-            setTimeout(() => {
-                if (!hamburgerMenu.classList.contains('active')) {
-                    menuContent.style.setProperty('display', 'none', 'important');
-                }
-            }, 300);
-        }
-    }
-    
-    // Log the state
-    console.log('Menu active class toggled. Is active:', hamburgerMenu.classList.contains('active'));
-}
-
-// Define a simple initialization function for the menu
-window.initMenu = function() {
-    console.log('Initializing menu - new simplified version');
-    
-    // Get menu elements
-    const hamburgerMenu = document.querySelector('.hamburger-menu');
-    const menuLines = document.querySelector('.menu-lines');
-    const menuContent = document.querySelector('.menu-content');
-    
-    if (!hamburgerMenu || !menuLines || !menuContent) {
-        console.error('Menu elements not found in initMenu');
-        return;
-    }
-    
-    // Make sure the hamburger menu itself is visible
-    hamburgerMenu.style.display = 'block';
-    hamburgerMenu.style.visibility = 'visible';
-    hamburgerMenu.style.opacity = '1';
-    
-    // Click handler for menu lines (the hamburger icon itself)
-    menuLines.onclick = function(e) {
-        console.log('Menu lines (hamburger icon) clicked');
-        e.stopPropagation();
-        window.toggleHamburgerMenu(); // Toggle the menu
-    };
-    
-    // Click handler for the "Show Playlists" menu item
-    const showPlaylistsBtn = document.getElementById('show-playlists');
-    if (showPlaylistsBtn) {
-        showPlaylistsBtn.onclick = function(e) {
-            console.log('Show playlists menu item clicked');
+    // Playlists button click handler
+    if (playlistsBtn) {
+        playlistsBtn.addEventListener('click', function(e) {
+            console.log('Playlists header button clicked');
             e.preventDefault();
             e.stopPropagation();
             
             const drawer = document.getElementById('playlist-drawer');
             if (drawer) {
                 drawer.classList.add('open');
-                hamburgerMenu.style.display = 'none';
                 if (typeof loadPlaylists === 'function') loadPlaylists();
             }
-            window.toggleHamburgerMenu(true); // Force close the menu
-        };
+        });
     }
     
-    // Click handler for the "Download App" menu item
-    const downloadLink = document.querySelector('.download-link');
-    if (downloadLink) {
-        downloadLink.onclick = function(e) {
+    // Download button click handler
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('Download link menu item clicked');
+            console.log('Download header button clicked');
             triggerAppDownload();
-            setTimeout(() => window.toggleHamburgerMenu(true), 100); // Force close after a short delay
-        };
+        });
     }
     
-    // Click handler for clicks outside the menu to close it
-    document.addEventListener('click', function(e) {
-        // If the menu is active and the click is outside the hamburger menu element
-        if (hamburgerMenu.classList.contains('active') && !hamburgerMenu.contains(e.target)) {
-            console.log('Clicked outside active menu, closing.');
-            window.toggleHamburgerMenu(true); // Force close the menu
-        }
-    });
+    // Settings button click handler
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Settings header button clicked');
+            // You can add settings functionality here
+            showNotification('Settings feature coming soon!', 'info');
+        });
+    }
+    
+    console.log('Header navigation initialization complete.');
+}
 
-    // Prevent clicks inside the menu content from closing the menu (event propagation)
-    menuContent.addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
-
-    console.log('Menu initialization complete.');
-};
-
-// Ensure initMenu is called only once after the DOM is ready
+// Ensure initHeaderNav is called after DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', window.initMenu);
+    document.addEventListener('DOMContentLoaded', initHeaderNav);
 } else {
-    // DOM is already ready, or this script is deferred
-    window.initMenu();
+    initHeaderNav();
 }
 // function onGoogleSignIn(googleUser) {
 //     // For Google Identity Services
@@ -338,9 +255,9 @@ if (searchInput && searchBtn) {
 // Fuzzy search options
 const fuseOptions = {
     keys: ['name', 'title'],
-    threshold: 0.4, // Lower = more strict matching
-    distance: 100, // How far to extend the fuzzy match
-    minMatchCharLength: 2
+    threshold: 1, // Lower = more strict matching
+    distance: 100000000000000, // How far to extend the fuzzy match
+    minMatchCharLength: 1
 };
 
 // Function to handle search
@@ -354,8 +271,14 @@ function handleSearch() {
     }
 
     const query = searchInput.value.toLowerCase().trim();
+    const forYouSection = document.querySelector('.for-you-section');
+    const lastSessionSection = document.querySelector('.last-session');
     
     if (query === "") {
+        // Show all sections when search is cleared
+        if (forYouSection) forYouSection.style.display = 'block';
+        if (lastSessionSection) lastSessionSection.style.display = 'block';
+        
         if (window.navigationState && window.navigationState.currentView === 'playlist-view' && currentPlaylist && playlists[currentPlaylist] && Array.isArray(playlists[currentPlaylist].songs)) {
             songList = [...playlists[currentPlaylist].songs];
         } else {
@@ -363,8 +286,17 @@ function handleSearch() {
         }
         filteredSongs = []; 
     } else {
-        // Initialize Fuse with our song list
-        const fuse = new Fuse(songList, fuseOptions);
+        // Hide all sections when searching to show only search results
+        if (forYouSection) forYouSection.style.display = 'none';
+        if (lastSessionSection) lastSessionSection.style.display = 'none';
+        
+        // Determine which song list to search in
+        const searchSource = window.navigationState && window.navigationState.currentView === 'playlist-view' && currentPlaylist && playlists[currentPlaylist] && Array.isArray(playlists[currentPlaylist].songs)
+            ? playlists[currentPlaylist].songs
+            : allSongs;
+        
+        // Initialize Fuse with the appropriate song list
+        const fuse = new Fuse(searchSource, fuseOptions);
         
         // Get fuzzy search results
         const results = fuse.search(query);
@@ -610,21 +542,58 @@ function updateProgressFromEvent(e, setAudioTime = false) {
     const width = bounds.width;
     const percentage = Math.min(Math.max(x / width, 0), 1);
 
-    // Update progress bar value and UI
+    // Update progress bar value and UI with enhanced visual feedback
     progressBar.value = percentage * 100;
     progressBar.style.setProperty('--value', `${percentage * 100}%`);
     const newTime = percentage * audioPlayer.duration;
+    
+    // Update time display
     currentTimeEl.textContent = formatTime(newTime);
+    
+    // Show preview tooltip with time
+    showProgressPreview(e, newTime);
+    
+    // Add visual feedback classes
+    if (!setAudioTime) {
+        progressBar.classList.add('seeking');
+    }
 
     // Only set audio time if requested (on mouseup/touchend/click)
     if (setAudioTime) {
         try {
             audioPlayer.currentTime = newTime;
+            progressBar.classList.remove('seeking');
+            hideProgressPreview();
         } catch (error) {
             console.error('Error setting currentTime:', error);
         }
     }
-    audioPlayer.dispatchEvent(new Event('seeking'));
+}
+
+function showProgressPreview(e, time) {
+    let preview = document.querySelector('.progress-preview');
+    if (!preview) {
+        preview = document.createElement('div');
+        preview.className = 'progress-preview';
+        document.querySelector('.progress-container').appendChild(preview);
+    }
+    
+    const bounds = progressBar.getBoundingClientRect();
+    const containerBounds = document.querySelector('.progress-container').getBoundingClientRect();
+    const x = e.clientX - containerBounds.left;
+    
+    preview.textContent = formatTime(time);
+    preview.style.left = `${x}px`;
+    preview.style.opacity = '1';
+    preview.style.transform = 'translateX(-50%) translateY(-5px) scale(1.05)';
+}
+
+function hideProgressPreview() {
+    const preview = document.querySelector('.progress-preview');
+    if (preview) {
+        preview.style.opacity = '0';
+        preview.style.transform = 'translateX(-50%) translateY(0) scale(1)';
+    }
 }// Dispatch a seeking event to ensure the audio player updates
 
 progressBar.addEventListener('mousedown', (e) => {
@@ -634,6 +603,31 @@ progressBar.addEventListener('mousedown', (e) => {
     if (wasPlaying) audioPlayer.pause();
     updateProgressFromEvent(e);
     progressBar.classList.add('dragging');
+    progressBar.classList.add('seeking');
+});
+
+progressBar.addEventListener('mouseenter', (e) => {
+    if (!isDragging && audioPlayer.duration) {
+        progressBar.classList.add('hovering');
+    }
+});
+
+progressBar.addEventListener('mouseleave', (e) => {
+    if (!isDragging) {
+        progressBar.classList.remove('hovering');
+        hideProgressPreview();
+    }
+});
+
+progressBar.addEventListener('mousemove', (e) => {
+    if (!isDragging && audioPlayer.duration) {
+        const bounds = progressBar.getBoundingClientRect();
+        const x = e.clientX - bounds.left;
+        const width = bounds.width;
+        const percentage = Math.min(Math.max(x / width, 0), 1);
+        const previewTime = percentage * audioPlayer.duration;
+        showProgressPreview(e, previewTime);
+    }
 });
 
 document.addEventListener('mousemove', (e) => {
@@ -646,9 +640,11 @@ document.addEventListener('mouseup', (e) => {
     if (isDragging) {
         isDragging = false;
         progressBar.classList.remove('dragging');
-        updateProgressFromEvent(e); // Final update
+        progressBar.classList.remove('seeking');
+        updateProgressFromEvent(e, true); // Final update with audio seek
         if (wasPlaying) audioPlayer.play();
         wasPlaying = false;
+        hideProgressPreview();
     }
 });
 
@@ -682,32 +678,25 @@ progressBar.addEventListener('touchend', (e) => {
 });
 
 progressBar.addEventListener('click', function progressBarClickHandler(e) {
-    if (!isValidAudioState()) {
-        console.warn('Audio not ready - please wait for song to load');
-        return;
-    }
-    const bounds = progressBar.getBoundingClientRect();
-    const width = bounds.width;
-    if (width <= 0) return;
-    const x = Math.min(Math.max(e.clientX - bounds.left, 0), width);
-    const percentage = x / width;
-    const newTime = percentage * audioPlayer.duration;
-    if (!isFinite(newTime) || newTime < 0) return;
-
-    try {
-        audioPlayer.currentTime = Math.min(newTime, audioPlayer.duration);
-        updateProgressDisplay(percentage);
-    } catch (error) {
-        console.error('Seek failed:', error);
+    if (!isDragging && isValidAudioState()) {
+        updateProgressFromEvent(e, true);
     }
 });
 
 // Update progress bar and time displays
 audioPlayer.addEventListener('timeupdate', () => {
-    if (!isNaN(audioPlayer.duration)) {
+    if (!isNaN(audioPlayer.duration) && !isDragging) {
         const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
         progressBar.value = progress;
         progressBar.style.setProperty('--value', `${progress}%`);
+        
+        // Add playing class for visual feedback
+        if (!audioPlayer.paused) {
+            progressBar.classList.add('playing');
+        } else {
+            progressBar.classList.remove('playing');
+        }
+        
         // Update current time display
         currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
         // Update duration display if not already set
@@ -719,9 +708,9 @@ audioPlayer.addEventListener('timeupdate', () => {
 
 // Update duration when metadata is loaded
 audioPlayer.addEventListener('loadedmetadata', () => {
-    const durationMinutes = Math.floor(audioPlayer.duration / 60);
-    const durationSeconds = Math.floor(audioPlayer.duration % 60);
-    durationEl.textContent = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+    if (audioPlayer.duration && isFinite(audioPlayer.duration)) {
+        durationEl.textContent = formatTime(audioPlayer.duration);
+    }
 });
 
 // Wrap all playlist-related code in DOMContentLoaded
@@ -731,8 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playlistsBtn = document.getElementById('playlists-btn');
     const lastSessionTracks = document.getElementById('last-session-tracks');
 
-    // Don't initialize hamburger menu here - it's already done in window.initMenu
-    // This was causing duplicate event handlers!
+    // Header navigation is initialized separately
 
     // Initialize playlist button click handler
     if (playlistsBtn) {
@@ -827,17 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateLastSession();
                 fetchRecommendations();
                 
-                // Ensure hamburger menu is visible after songs load
-                if (typeof window.showHamburgerMenu === 'function') {
-                    window.showHamburgerMenu();
-                } else {
-                    const hamburgerMenu = document.querySelector('.hamburger-menu');
-                    if (hamburgerMenu) {
-                        hamburgerMenu.style.display = 'block';
-                        hamburgerMenu.style.visibility = 'visible';
-                        hamburgerMenu.style.opacity = '1';
-                    }
-                }
+                // Header navigation is always visible
             } else {
                 console.error('Invalid song data:', data);
             }
@@ -953,13 +931,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render the updated song list
         renderSongList();
         
-        // Ensure hamburger menu is visible
-        if (typeof window.showHamburgerMenu === 'function') {
-            window.showHamburgerMenu();
-        } else {
-            const hamburgerMenu = document.querySelector('.hamburger-menu');
-            if (hamburgerMenu) hamburgerMenu.style.display = '';
-        }
+        // Header navigation is always visible
         
         // Only call if the function is defined
         if (typeof window.refreshPlayingHighlight === 'function') {
@@ -1027,16 +999,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (audioPlayer) {
         audioPlayer.addEventListener('ended', () => {
             playNextSong();
-        });
-
-        audioPlayer.addEventListener('timeupdate', () => {
-            if (!isNaN(audioPlayer.duration)) {
-                const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-                progressBar.value = progress;
-                progressBar.style.setProperty('--value', `${progress}%`);
-                currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
-                durationEl.textContent = formatTime(audioPlayer.duration);
-            }
         });
     }
 
@@ -1432,31 +1394,7 @@ function hidePlaylistContextMenu() {
     }
 }
 
-// Function to ensure the hamburger menu is visible - make it globally accessible
-window.showHamburgerMenu = function() {
-    const hamburgerMenu = document.querySelector('.hamburger-menu');
-    if (hamburgerMenu) {
-        console.log('Showing hamburger menu via global function with !important');
-        hamburgerMenu.style.setProperty('display', 'block', 'important');
-        hamburgerMenu.style.setProperty('visibility', 'visible', 'important');
-        hamburgerMenu.style.setProperty('opacity', '1', 'important');
-        
-        const menuLines = hamburgerMenu.querySelector('.menu-lines');
-        if (menuLines) {
-            menuLines.style.setProperty('display', 'flex', 'important');
-            menuLines.style.setProperty('visibility', 'visible', 'important');
-            menuLines.style.setProperty('opacity', '1', 'important');
-            
-            const spans = menuLines.querySelectorAll('span');
-            spans.forEach(span => {
-                span.style.setProperty('visibility', 'visible', 'important');
-                span.style.setProperty('opacity', '1', 'important');
-            });
-        }
-    } else {
-        console.error('CRITICAL: Hamburger menu element (.hamburger-menu) NOT FOUND by window.showHamburgerMenu. Menu cannot be shown.');
-    }
-}
+// Header navigation is always visible, no need for show/hide functions
 
 async function addSongToPlaylist(playlistName, song) {
     const playlist = playlists[playlistName] || [];
@@ -1621,12 +1559,6 @@ if (closeDrawerBtn) {
                 window.returnToHomeView();
             } else {
                 // Fallback if function not available
-                // Show hamburger menu and restore main song list
-                const hamburgerMenu = document.querySelector('.hamburger-menu');
-                if (hamburgerMenu) {
-                    hamburgerMenu.style.display = '';
-                }
-                
                 if (typeof renderSongList === 'function' && window.allSongs) {
                     window.songList = [...window.allSongs];
                     renderSongList();
