@@ -1648,8 +1648,8 @@ button.playing-song{
 
     /* Adjust recommendations grid */
     .recommendations-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0;
     }
 
     .recommendation-title {
@@ -1674,6 +1674,8 @@ button.playing-song{
     /* Adjust search bar */
     .search-container {
         padding: 0 10px;
+        margin-top:100px;
+        margin-bottom: 50px;
     }
 
     #search-input {
