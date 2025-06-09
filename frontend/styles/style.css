@@ -1,12 +1,14 @@
 /* Base Styles */
 :root {
-    --spotify-green: #04ff00;
+    --spotify-green: #04ff00c9;
     --spotify-dark: #000000;
     --spotify-dark-gray: #131313;
     --spotify-light-gray: #b3b3b3;
     --spotify-player-bg: #282828;
-    --spotify-hover-gray: #2a2a2a;
-    
+    --spotify-hover-gray: rgba(0, 255, 255, 0.1);
+    --neon-gradient: linear-gradient(to top right,rgb(0, 238, 255) ,rgb(0, 30, 255) 65%,rgb(255, 0, 191) 85%);   
+    --glass-bg: rgba(255, 255, 255, 0.008);
+    --glass-border: rgba(255, 255, 255, 0.007);
 }
 
 * {
@@ -18,20 +20,7 @@
     letter-spacing: 0.02em;
 
 }
-@font-face {
-    font-family: "fattern";
-    src: url(KFOlCnqEu92Fr1MmEU9vAw.ttf) format('woff2');
-    font-weight: 100;
-    font-display: fallback;
-}
-.roboto-<uniquifier> {
-  font-family: "Roboto", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
-  font-variation-settings:
-    "wdth" 200;
-}
+
 body {
     letter-spacing: 0.02em;
     line-height: 1.6;
@@ -53,10 +42,11 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
+    /* background-image: var(--neon-gradient); */
     background: 
-        radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(191, 0, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 40% 80%, rgba(255, 0, 127, 0.1) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(0, 238, 255, 0.204) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 30, 255, 0.231) 0%, transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(255, 0, 191, 0.207) 0%, transparent 50%);
     pointer-events: none;
     z-index: -1;
 }
@@ -142,7 +132,7 @@ a:hover {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: var(--glass-bg);
+    background: transparent;
     backdrop-filter: blur(15px);
     border: 1px solid var(--glass-border);
     color: white;
@@ -422,7 +412,7 @@ p{
     
     font-size: 14px;
     font-weight: 500;
-    color: var(--spotify-light-gray);
+    
     margin-left: 15px;
     animation: pulseOpacity 2s infinite;
 }
@@ -447,15 +437,6 @@ p{
     padding-bottom: 20px;
     -webkit-overflow-scrolling: touch;
     position: relative;
-    
-    /* Add subtle gradient indicators at the edges */
-    background: linear-gradient(to right, 
-                rgba(18, 18, 18, 1) 0%,
-                rgba(18, 18, 18, 0) 2%,
-                rgba(18, 18, 18, 0) 98%,
-                rgba(18, 18, 18, 1) 100%);
-                
-    /* Custom scrollbar styling */
     scrollbar-width: thin;
     scrollbar-color: var(--spotify-green) rgba(255,255,255,0.1);
 }
@@ -466,7 +447,7 @@ p{
 }
 
 .session-tracks::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.1);
+    /* background: rgba(255,255,255,0.1); */
     border-radius: 4px;
 }
 
@@ -482,7 +463,8 @@ p{
 /* Removed scrollbar styles */
 
 .session-tracks button {
-    background: var(--spotify-dark-gray);
+    /* background: var(--spotify-dark-gray); */
+    background: var(--glass-bg);
     border: none;
     border-radius: 8px;
     padding: 12px;
@@ -553,17 +535,21 @@ p{
     padding: 12px 15px;
     border: none;
     border-radius: 20px 0 0 20px;
-    background: rgba(255, 255, 255, 0.1);
+    /* background: rgb(255, 255, 255); */
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(0, 238, 255, 0.204) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 30, 255, 0.231) 0%, transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(255, 0, 191, 0.207) 0%, transparent 50%);
+    
     color: white;
     font-size: 15px !important;
     font-weight: 600 !important;
     transition: all 0.3s ease;
 }
-
 #search-input:focus {
     outline: none;
     background: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.5);
+    box-shadow: 0 0 0 2px var(--spotify-green);
 }
 
 #search-btn {
@@ -676,22 +662,23 @@ button.playing-song{
 }
 
 #play-pause {
-    background: white;
-    color: black;
+    background-image: var(--neon-gradient);
+    color: white;
     width: 46px !important; /* Larger play button */
     height: 46px !important;
     font-size: 20px !important;
 }
 
 .controls button:hover {
+    color: var(--neon-gradient);
     transform: scale(1.15);
-    color: var(--spotify-green);
+    /* color: var(--spotify-green); */
 }
 
 #play-pause:hover {
     transform: scale(1.15);
-    background: var(--spotify-green);
-    color: white;
+    /* background: var(--spotify-green); */
+    color:white;
 }
 
 .progress-container {

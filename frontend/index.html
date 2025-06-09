@@ -293,63 +293,6 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <script src="scripts/main.js"></script>
-    
-    <!-- Additional CSS overrides for menu functionality -->
-    <style>
-        /* Ensure hamburger menu is visible */
-        .hamburger-menu {
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            z-index: 2000 !important;
-        }
-        
-        /* Ensure menu lines are visible and clickable */
-        .menu-lines {
-            display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            cursor: pointer !important;
-            z-index: 2001 !important;
-            pointer-events: auto !important;
-        }
-        
-        /* Ensure menu lines spans are visible */
-        .menu-lines span {
-            visibility: visible !important;
-            opacity: 1 !important;
-            background-color: white !important;
-            cursor: pointer !important;
-            pointer-events: auto !important;
-        }
-        
-        /* Ensure active menu content is visible and clickable */
-        .hamburger-menu.active .menu-content {
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            z-index: 2002 !important;
-            pointer-events: auto !important;
-        }
-        
-        /* Ensure menu is completely hidden when closed */
-        .hamburger-menu:not(.active) .menu-content {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-        
-        /* Ensure menu items are visible and clickable */
-        .menu-item, .download-link {
-            display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-            cursor: pointer !important;
-            z-index: 2003 !important;
-        }
-    </style>
     <script>
         function handleCredentialResponse(response) {
             const data = parseJwt(response.credential);

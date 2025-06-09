@@ -1026,6 +1026,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.code === 'Space' && e.target === document.body) {
             e.preventDefault();
             playPauseBtn.click();
+        }else if (e.code === 'KeyS' && (e.ctrlKey || e.metaKey)){
+            e.preventDefault();
+            shuffleBtn.classList.toggle('active');
+        }else if (e.code === 'KeyR' && (e.ctrlKey || e.metaKey)){
+            e.preventDefault();
+            isRepeatOn = !isRepeatOn;
+            repeatButton.style.color = isRepeatOn ? '#04ff00c9' : '';
         } else if (e.code === 'ArrowLeft') {
             prevTrackBtn.click();
         } else if (e.code === 'ArrowRight') {
@@ -1433,17 +1440,17 @@ let isRepeatOn = false;
 if (repeatButton) {
     // Change color on hover
     repeatButton.addEventListener('mouseenter', () => {
-        repeatButton.style.color = 'yellow';
+        repeatButton.style.color = 'blue';
     });
 
     repeatButton.addEventListener('mouseleave', () => {
-        repeatButton.style.color = isRepeatOn ? 'green' : '';
+        repeatButton.style.color = isRepeatOn ? '#04ff00c9' : '';
     });
 
     // Toggle repeat functionality
     repeatButton.addEventListener('click', () => {
         isRepeatOn = !isRepeatOn;
-        repeatButton.style.color = isRepeatOn ? 'green' : '';
+        repeatButton.style.color = isRepeatOn ? '#04ff00c9' : '';
 
         if (isRepeatOn) {
             audioPlayer.loop = true;
