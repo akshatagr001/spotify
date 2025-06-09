@@ -13,6 +13,7 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/modals.css">
+    <link rel="stylesheet" href="styles/settings-modal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -86,7 +87,7 @@
         }
     </style>
 </head>
-<body>
+<body ::before>
     <!-- Header Navigation -->
     <div class="header-nav">
         <div class="header-left">
@@ -97,6 +98,9 @@
         <div class="header-right">
             <button class="header-btn" id="settings-header-btn" title="Settings">
                 <i class="fas fa-cog"></i>
+            </button>
+            <button class="header-btn theme-header-btn" id="theme-header-btn" title="Toggle Theme">
+                <i class="fa-solid fa-palette"></i>
             </button>
             <button class="header-btn download-header-btn" id="download-header-btn" title="Download App">
                 <i class="fas fa-download"></i>
@@ -283,6 +287,140 @@
                         <i class="fas fa-check"></i>
                         <span>Done</span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="settings-sidebar">
+                <div class="settings-nav-item active" data-section="general">
+                    <i class="fas fa-cog"></i>
+                    <span>General</span>
+                </div>
+                <div class="settings-nav-item" data-section="playback">
+                    <i class="fas fa-play-circle"></i>
+                    <span>Playback</span>
+                </div>
+                <div class="settings-nav-item" data-section="audio">
+                    <i class="fas fa-volume-up"></i>
+                    <span>Audio</span>
+                </div>
+                <div class="settings-nav-item" data-section="appearance">
+                    <i class="fas fa-palette"></i>
+                    <span>Appearance</span>
+                </div>
+                <div class="settings-nav-item" data-section="about">
+                    <i class="fas fa-info-circle"></i>
+                    <span>About</span>
+                </div>
+            </div>
+            
+            <div class="settings-content">
+                <!-- General Settings -->
+                <div class="settings-section active" id="general-section">
+                    <h2>General Settings</h2>
+                    <div class="settings-group">
+                        <h3>Startup</h3>
+                        <div class="settings-option">
+                            <div>
+                                <div class="settings-label">Auto-start app</div>
+                                <div class="settings-description">Launch app when system starts</div>
+                            </div>
+                            <div class="settings-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="auto-start-setting">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Playback Settings -->
+                <div class="settings-section" id="playback-section">
+                    <h2>Playback Settings</h2>
+                    <div class="settings-group">
+                        <h3>Playback Options</h3>
+                        <div class="settings-option">
+                            <div>
+                                <div class="settings-label">Crossfade songs</div>
+                                <div class="settings-description">Allow smooth transition between songs</div>
+                            </div>
+                            <div class="settings-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="crossfade-setting">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="settings-option">
+                            <div>
+                                <div class="settings-label">Auto-play</div>
+                                <div class="settings-description">Continue playing similar songs when playlist ends</div>
+                            </div>
+                            <div class="settings-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="autoplay-setting">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audio Settings -->
+                <div class="settings-section" id="audio-section">
+                    <h2>Audio Settings</h2>
+                    <div class="settings-group">
+                        <h3>Audio Quality</h3>
+                        <div class="settings-option">
+                            <div>
+                                <div class="settings-label">Streaming quality</div>
+                                <div class="settings-description">Set your preferred streaming quality</div>
+                            </div>
+                            <div class="settings-control">
+                                <select class="settings-select" id="quality-setting">
+                                    <option value="auto">Automatic</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance Settings -->
+                <div class="settings-section" id="appearance-section">
+                    <h2>Appearance Settings</h2>
+                    <div class="settings-group">
+                        <h3>Theme</h3>
+                        <div class="settings-option">
+                            <div>
+                                <div class="settings-label">Dark mode</div>
+                                <div class="settings-description">Use dark theme for the application</div>
+                            </div>
+                            <div class="settings-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="dark-mode-setting" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About Section -->
+                <div class="settings-section" id="about-section">
+                    <h2>About</h2>
+                    <div class="settings-group">
+                        <h3>Application Info</h3>
+                        <p>Version: 1.0.0</p>
+                        <p>Made with ❤️ by Akshat</p>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,0 +1,240 @@
+/* Settings Modal Styles */
+#settings-modal.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--modal-overlay);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+#settings-modal .modal-content {
+    background: var(--modal-bg);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    height: 80vh;
+    display: flex;
+    overflow: hidden;
+    box-shadow: var(--modal-shadow);
+    animation: modalSlideUp 0.3s ease-out;
+    border: 1px solid var(--modal-border);
+}
+
+.settings-sidebar {
+    width: 30%;
+    background: rgba(0, 0, 0, 0.2);
+    border-right: 1px solid var(--modal-border);
+    overflow-y: auto;
+    padding: 20px 0;
+}
+
+.settings-content {
+    width: 70%;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.settings-nav-item {
+    padding: 12px 24px;
+    color: var(--modal-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.settings-nav-item:hover {
+    background: var(--modal-hover);
+}
+
+.settings-nav-item.active {
+    background: var(--modal-hover);
+    border-left: 3px solid var(--modal-success);
+}
+
+.settings-nav-item i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.settings-section {
+    display: none;
+}
+
+.settings-section.active {
+    display: block;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.settings-section h2 {
+    color: var(--modal-text);
+    margin: 0 0 24px 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.settings-section p {
+    color: var(--modal-secondary-text);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.settings-group {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--modal-border);
+}
+
+.settings-group:last-child {
+    border-bottom: none;
+}
+
+.settings-group h3 {
+    color: var(--modal-text);
+    margin: 0 0 16px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.settings-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.settings-option:last-child {
+    margin-bottom: 0;
+}
+
+.settings-label {
+    color: var(--modal-text);
+    font-size: 1rem;
+}
+
+.settings-description {
+    color: var(--modal-secondary-text);
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+/* Settings Controls */
+.settings-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Switch Control */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--modal-border);
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--modal-success);
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* Select Control */
+.settings-select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--modal-border);
+    border-radius: 4px;
+    color: var(--modal-text);
+    padding: 8px 12px;
+    min-width: 120px;
+    cursor: pointer;
+}
+
+.settings-select:focus {
+    outline: none;
+    border-color: var(--modal-success);
+}
+
+.settings-select option {
+    background: var(--modal-bg);
+    color: var(--modal-text);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    #settings-modal .modal-content {
+        flex-direction: column;
+        height: 90vh;
+    }
+
+    .settings-sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--modal-border);
+        padding: 10px 0;
+    }
+
+    .settings-content {
+        width: 100%;
+        height: 100%;
+    }
+
+    .settings-nav-item {
+        padding: 10px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    #settings-modal .modal-content {
+        width: 95%;
+        height: 95vh;
+    }
+}

@@ -16,6 +16,7 @@ let userToken = null;
 let userEmail = null;
 let playlistContextMenu = null;
 let currentContextPlaylist = null;
+let isDefault = true;
 
 // Navigation state tracking
 window.navigationState = {
@@ -112,6 +113,7 @@ function initHeaderNav() {
     // Get header button elements
     const playlistsBtn = document.getElementById('playlists-header-btn');
     const downloadBtn = document.getElementById('download-header-btn');
+    const themeBtn = document.getElementById('theme-header-btn');
     const settingsBtn = document.getElementById('settings-header-btn');
     
     // Playlists button click handler
@@ -143,11 +145,55 @@ function initHeaderNav() {
         settingsBtn.addEventListener('click', function(e) {
             e.preventDefault();
             console.log('Settings header button clicked');
-            // You can add settings functionality here
-            showNotification('Settings feature coming soon!', 'info');
+            const settingsModal = document.getElementById('settings-modal');
+            if (settingsModal) {
+                settingsModal.style.display = 'flex';
+            }
         });
     }
-    
+    if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+        if (isDefault) {
+            // 🌞 Windows 11-like Light Theme
+            document.documentElement.style.setProperty('--neon-bg', `
+                radial-gradient(circle at 20% 50%, rgba(180, 220, 255, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(200, 180, 255, 0.25) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(255, 210, 230, 0.25) 0%, transparent 50%)
+            `);
+            document.documentElement.style.setProperty('--neon-gradient', `linear-gradient(to right, #6ec1e4, #a792f2)`);
+
+            document.documentElement.style.setProperty('--text-color', `#1a1a1a`);
+            document.documentElement.style.setProperty('--spotify-dark', `#f3f3f3`); // ← Windows 11 base
+            document.documentElement.style.setProperty('--spotify-player-bg', `#e5e5e5`);
+            document.documentElement.style.setProperty('--glass-bg', `rgba(0, 0, 0, 0.035)`);
+            document.documentElement.style.setProperty('--glass-border', `rgba(0, 0, 0, 0.08)`);
+            document.documentElement.style.setProperty('--spotify-light-gray', `#555`);
+            document.documentElement.style.setProperty('--spotify-hover-gray', `rgba(0, 0, 0, 0.06)`);
+        } else {
+            // 🌚 Dark Theme
+            document.documentElement.style.setProperty('--neon-bg', `
+                radial-gradient(circle at 20% 50%, rgba(0, 238, 255, 0.204) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 30, 255, 0.231) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(255, 0, 191, 0.207) 0%, transparent 50%)
+            `);
+            document.documentElement.style.setProperty('--neon-gradient', `linear-gradient(to top right, rgb(0, 238, 255), rgb(0, 30, 255) 65%, rgb(255, 0, 191) 85%)`);
+
+            document.documentElement.style.setProperty('--text-color', `#ffffff`);
+            document.documentElement.style.setProperty('--spotify-dark', `#000000`);
+            document.documentElement.style.setProperty('--spotify-player-bg', `#282828`);
+            document.documentElement.style.setProperty('--glass-bg', `rgba(255, 255, 255, 0.034)`);
+            document.documentElement.style.setProperty('--glass-border', `rgba(255, 255, 255, 0.007)`);
+            document.documentElement.style.setProperty('--spotify-light-gray', `#b3b3b3`);
+            document.documentElement.style.setProperty('--spotify-hover-gray', `rgba(0, 255, 255, 0.1)`);
+        }
+
+        isDefault = !isDefault;
+    });
+}
+
+
+
+
     console.log('Header navigation initialization complete.');
 }
 
@@ -2070,6 +2116,7 @@ function showCustomConfirm(title, message, onConfirm, type = 'warning', confirmT
 
     if (!confirmModal || !confirmTitle || !confirmMessage || !confirmYesBtn || !confirmNoBtn || !closeConfirmModalBtn) {
         console.error('Custom confirm modal elements not found');
+       
         if (confirm(message)) {
             onConfirm();
         }
@@ -2524,3 +2571,78 @@ if (playPauseBtn) {
         playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
     }
 }
+
+// Initialize settings modal functionality
+document.addEventListener('DOMContentLoaded', () => {
+    // Settings modal elements
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsNavItems = document.querySelectorAll('.settings-nav-item');
+    const settingsSection = document.querySelectorAll('.settings-section');
+
+    // Settings inputs
+    const autoStartSetting = document.getElementById('auto-start-setting');
+    const crossfadeSetting = document.getElementById('crossfade-setting');
+    const autoplaySetting = document.getElementById('autoplay-setting');
+    const qualitySetting = document.getElementById('quality-setting');
+    const darkModeSetting = document.getElementById('dark-mode-setting');
+
+    // Load saved settings
+    function loadSettings() {
+        autoStartSetting.checked = localStorage.getItem('autoStart') === 'true';
+        crossfadeSetting.checked = localStorage.getItem('crossfade') === 'true';
+        autoplaySetting.checked = localStorage.getItem('autoplay') === 'true';
+        qualitySetting.value = localStorage.getItem('quality') || 'auto';
+        darkModeSetting.checked = localStorage.getItem('darkMode') !== 'false'; // Default to true
+    }
+
+    // Save settings
+    function saveSettings() {
+        localStorage.setItem('autoStart', autoStartSetting.checked);
+        localStorage.setItem('crossfade', crossfadeSetting.checked);
+        localStorage.setItem('autoplay', autoplaySetting.checked);
+        localStorage.setItem('quality', qualitySetting.value);
+        localStorage.setItem('darkMode', darkModeSetting.checked);
+    }
+
+    // Handle settings changes
+    [autoStartSetting, crossfadeSetting, autoplaySetting, darkModeSetting].forEach(setting => {
+        setting.addEventListener('change', saveSettings);
+    });
+    qualitySetting.addEventListener('change', saveSettings);
+
+    // Close modal when clicking outside
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            settingsModal.style.display = 'none';
+        }
+    });
+
+    // Handle Escape key to close modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && settingsModal.style.display === 'flex') {
+            settingsModal.style.display = 'none';
+        }
+    });
+
+    // Handle tab switching
+    settingsNavItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const section = item.dataset.section;
+            
+            // Update navigation items
+            settingsNavItems.forEach(navItem => {
+                navItem.classList.remove('active');
+            });
+            item.classList.add('active');
+            
+            // Update sections
+            settingsSection.forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`${section}-section`).classList.add('active');
+        });
+    });
+
+    // Load settings on init
+    loadSettings();
+});
