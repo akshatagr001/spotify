@@ -1666,7 +1666,14 @@ button.playing-song{
 
     }
     .recommendation-title {
+        width:60%;
         font-size: 13px !important;
+        text-transform: capitalize !important;
+        font-weight: 700 !important;
+        margin: 0 0 5px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .recommendation-plays {
