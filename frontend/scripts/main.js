@@ -156,14 +156,14 @@ function initHeaderNav() {
         if (isDefault) {
             // 🌞 Windows 11-like Light Theme
             document.documentElement.style.setProperty('--neon-bg', `
-                radial-gradient(circle at 20% 50%, rgba(180, 220, 255, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(200, 180, 255, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 50% 80%, rgba(255, 210, 230, 0.25) 0%, transparent 50%)
+                radial-gradient(circle at 20% 50%, rgba(0, 238, 255, 0.204) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 30, 255, 0.231)  0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(255, 0, 191, 0.207) 0%, transparent 50%)
             `);
             document.documentElement.style.setProperty('--neon-gradient', `linear-gradient(to right, #6ec1e4, #a792f2)`);
 
             document.documentElement.style.setProperty('--text-color', `#1a1a1a`);
-            document.documentElement.style.setProperty('--spotify-dark', `#f3f3f3`); // ← Windows 11 base
+            document.documentElement.style.setProperty('--spotify-dark', `rgb(179, 179, 179)`); // ← Windows 11 base
             document.documentElement.style.setProperty('--spotify-player-bg', `#e5e5e5`);
             document.documentElement.style.setProperty('--glass-bg', `rgba(0, 0, 0, 0.035)`);
             document.documentElement.style.setProperty('--glass-border', `rgba(0, 0, 0, 0.08)`);
