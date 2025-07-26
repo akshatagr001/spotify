@@ -2608,3 +2608,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load settings on init
     loadSettings();
 });
+
+// Add Lyrics button to player controls after DOMContentLoaded
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Add Lyrics button if not present
+    if (!document.getElementById('lyrics-btn')) {
+        const controls = document.querySelector('.controls');
+        if (controls) {
+            const lyricsBtn = document.createElement('button');
+            lyricsBtn.id = 'lyrics-btn';
+            lyricsBtn.title = 'Show Lyrics';
+            lyricsBtn.innerHTML = '<i class="fas fa-microphone-alt"></i>';
+            lyricsBtn.style.marginLeft = '8px';
+            controls.appendChild(lyricsBtn);
+            lyricsBtn.addEventListener('click', () => {
+                // Get current song title
+                let songTitle = '';
+                if (window.songList && typeof currentIndex !== 'undefined' && window.songList[currentIndex]) {
+                    songTitle = window.songList[currentIndex].title || window.songList[currentIndex].name;
+                } else {
+                    const nowPlayingTitle = document.getElementById('now-playing-title');
+                    songTitle = nowPlayingTitle ? nowPlayingTitle.textContent : '';
+                }
+                if (songTitle) {
+                    if (window.showLyricsForCurrentSong) {
+                        window.showLyricsForCurrentSong(songTitle);
+                    } else {
+                        alert('Lyrics module not loaded.');
+                    }
+                } else {
+                    alert('No song selected.');
+                }
+            });
+        }
+    }
+});
