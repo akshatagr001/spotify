@@ -150,45 +150,7 @@ function initHeaderNav() {
                 settingsModal.style.display = 'flex';
             }
         });
-    }
-    if (themeBtn) {
-    themeBtn.addEventListener('click', () => {
-        if (isDefault) {
-            // 🌞 Windows 11-like Light Theme
-            document.documentElement.style.setProperty('--neon-bg', `
-                radial-gradient(circle at 20% 50%, rgba(0, 238, 255, 0.204) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(0, 30, 255, 0.231)  0%, transparent 50%),
-                radial-gradient(circle at 50% 80%, rgba(255, 0, 191, 0.207) 0%, transparent 50%)
-            `);
-            document.documentElement.style.setProperty('--neon-gradient', `linear-gradient(to right, #6ec1e4, #a792f2)`);
-
-            document.documentElement.style.setProperty('--text-color', `#1a1a1a`);
-            document.documentElement.style.setProperty('--spotify-dark', `rgb(179, 179, 179)`); // ← Windows 11 base
-            document.documentElement.style.setProperty('--spotify-player-bg', `#e5e5e5`);
-            document.documentElement.style.setProperty('--glass-bg', `rgba(0, 0, 0, 0.035)`);
-            document.documentElement.style.setProperty('--glass-border', `rgba(0, 0, 0, 0.08)`);
-            document.documentElement.style.setProperty('--spotify-light-gray', `#555`);
-            document.documentElement.style.setProperty('--spotify-hover-gray', `rgba(0, 0, 0, 0.06)`);
-        } else {
-            // 🌚 Dark Theme
-            document.documentElement.style.setProperty('--neon-bg', `
-                radial-gradient(circle at 20% 50%, rgba(0, 238, 255, 0.204) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(0, 30, 255, 0.231) 0%, transparent 50%),
-                radial-gradient(circle at 50% 80%, rgba(255, 0, 191, 0.207) 0%, transparent 50%)
-            `);
-            document.documentElement.style.setProperty('--neon-gradient', `linear-gradient(to top right, rgb(0, 238, 255), rgb(0, 30, 255) 65%, rgb(255, 0, 191) 85%)`);
-
-            document.documentElement.style.setProperty('--text-color', `#ffffff`);
-            document.documentElement.style.setProperty('--spotify-dark', `#000000`);
-            document.documentElement.style.setProperty('--spotify-player-bg', `#282828`);
-            document.documentElement.style.setProperty('--glass-bg', `rgba(255, 255, 255, 0.034)`);
-            document.documentElement.style.setProperty('--glass-border', `rgba(255, 255, 255, 0.007)`);
-            document.documentElement.style.setProperty('--spotify-light-gray', `#b3b3b3`);
-            document.documentElement.style.setProperty('--spotify-hover-gray', `rgba(0, 255, 255, 0.1)`);
-        }
-
-        isDefault = !isDefault;
-    });
+    
 }
 
 
