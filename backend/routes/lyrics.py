@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
+from fastapi import APIRouter
 import requests
 from bs4 import BeautifulSoup
 
-bp = Blueprint('lyrics', __name__)
+bp = APIRouter('lyrics', __name__)
 GENIUS_API_KEY = "Yf3tV4gRCT_8vYEYN69P4GE29TOoGS1A0wF3plJoJNk0WqmRZC6ApiKZf4ePYkUt"
 
 @bp.route('/api/lyrics')
