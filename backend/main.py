@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 import random
 from typing import List, Dict
 import json
-from routes.lyrics import bp as lyrics_bp
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -335,8 +334,6 @@ register_tortoise(
     },
     generate_schemas=True,
 )
-
-app.register_blueprint(lyrics_bp)
 
 if __name__ == "__main__":
     import uvicorn

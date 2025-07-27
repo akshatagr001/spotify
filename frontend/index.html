@@ -228,7 +228,6 @@
                 <button id="repeat-button" class="control-button">
                     <i class="fas fa-redo"></i>
                 </button>
-                <button id="lyrics-btn" title="Show Lyrics"><i class="fas fa-microphone-alt"></i></button>
             </div>
             <div class="progress-container">
                 <span id="current-time">0:00</span>
@@ -429,14 +428,10 @@
 
     <audio id="audio-player"></audio>
 
-    <!-- Lyrics Tab (for sliding lyrics display) -->
-    <div id="lyrics-tab" style="display:none"></div>
-
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
-    <script src="scripts/lyrics.js"></script>
     <script src="scripts/main.js"></script>
-    <!-- <script>
+    <script>
         function handleCredentialResponse(response) {
             const data = parseJwt(response.credential);
             console.log("Google login success:", data);
@@ -465,7 +460,7 @@
             );
             return JSON.parse(jsonPayload);
         }
-    </script> -->
+    </script>
 
 </body>
 </html>
