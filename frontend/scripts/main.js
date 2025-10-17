@@ -1,5 +1,5 @@
 // Global state variables
-let contextMenu = null;
+window.contextMenu = null;
 let currentContextSong = null;
 let playlists = {};
 let currentPlaylist = null;

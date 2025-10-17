@@ -110,6 +110,31 @@
         </div>
     </div>
 
+    <!-- Add Lyrics Drawer -->
+    <div id="lyrics-drawer" class="drawer lyrics-drawer">
+        <div class="drawer-header">
+            <h2>Lyrics</h2>
+            <div class="drawer-actions">
+                <button class="close-drawer" id="close-lyrics-drawer"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div id="lyrics-container" class="lyrics-container">
+            <div class="current-song-info">
+                <img id="lyrics-song-img" src="default.jpg" alt="Current Song">
+                <div class="song-details">
+                    <h3 id="lyrics-song-title">No song selected</h3>
+                    <p id="lyrics-song-artist">-</p>
+                </div>
+            </div>
+            <div id="lyrics-content-drawer" class="lyrics-content">
+                <div class="lyrics-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading lyrics...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Add Playlist Drawer -->
     <div id="playlist-drawer" class="playlist-drawer">
         <div class="drawer-header">
@@ -431,8 +456,6 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
-    <script src="scripts/main.js"></script>
-
     <script src="scripts/main.js"></script>
     <script src="scripts/lyrics.js"></script>
 </body>
