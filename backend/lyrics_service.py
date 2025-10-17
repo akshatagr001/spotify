@@ -5,7 +5,9 @@ import time
 from urllib.parse import quote
 import json
 import os
+import re
 from pathlib import Path
+from typing import Dict, Optional, Any
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -44,14 +46,40 @@ def save_to_cache(song_title, data):
     except Exception as e:
         logger.error(f"Failed to cache lyrics for {song_title}: {e}")
 
+def clean_song_title(title):
+    """Clean the song title for better search results."""
+    # Remove file extensions
+    title = re.sub(r'\.(mp3|m4a)$', '', title, flags=re.IGNORECASE)
+    
+    # Remove common noise words and characters
+    title = re.sub(r'\b(official|video|audio|lyrics|hd|hq)\b', '', title, flags=re.IGNORECASE)
+    
+    # Remove text in brackets and parentheses
+    title = re.sub(r'\([^)]*\)|\[[^\]]*\]', '', title)
+    
+    # Remove feat., ft., etc.
+    title = re.sub(r'\b(feat\.?|ft\.?|featuring)\s+[^-]*', '', title, flags=re.IGNORECASE)
+    
+    # Clean up extra spaces and dashes
+    title = re.sub(r'\s+', ' ', title)
+    title = title.strip('- ')
+    
+    return title
+
 def fetch_lyrics(song_title):
     """Fetch lyrics from Genius API with caching and better error handling."""
     try:
-        logger.info(f"Fetching lyrics for: {song_title}")
+        original_title = song_title
+        logger.info(f"Original song title: {original_title}")
+        
+        # Clean the song title
+        song_title = clean_song_title(song_title)
+        logger.info(f"Cleaned song title: {song_title}")
         
         # Check cache first
         cached = get_cached_lyrics(song_title)
         if cached:
+            logger.info(f"Cache hit for {song_title}")
             return cached
 
         # Prepare API request
