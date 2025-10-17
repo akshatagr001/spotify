@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/modals.css">
     <link rel="stylesheet" href="styles/settings-modal.css">
+    <link rel="stylesheet" href="styles/lyrics.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -37,13 +38,7 @@
                     }
                 };
             }
-            
-            // DO NOT call window.initMenu() here; main.js handles its single initialization.
-            // console.log('DEBUG: Attempting to call window.initMenu() from index.html load event - THIS IS NOW REMOVED');
-            // if (typeof window.initMenu === 'function') {
-            //     // window.initMenu(); // REMOVED TO PREVENT DOUBLE INITIALIZATION
-            // }
-            
+
             // Show debug info with a delay
             setTimeout(function() {
                 console.log('DEBUG INFO (from index.html):');
@@ -107,23 +102,7 @@
             </button>
         </div>
     </div>
-    <!-- Google Sign-In Integration -->
-    <!-- <div id="login-section" style="margin: 20px; text-align: right;"> -->
-        <!-- Google Sign-In Button -->
-        <!-- <div id="g_id_onload"
-            data-client_id="999480998528-b5gsjv3klsudbr7hhk78sso30s88dnjp.apps.googleusercontent.com"
-            data-callback="handleCredentialResponse"
-            data-auto_prompt="false">
-        </div>
-        <div class="g_id_signin"
-            data-type="standard"
-            data-size="large"
-            data-theme="outline"
-            data-text="sign_in_with"
-            data-shape="rectangular"
-            data-logo_alignment="left">
-        </div> -->
-
+    
         <!-- Display logged-in user info -->
         <div id="user-info" style="display:none; margin-top: 10px;">
             <p>👋 Welcome, <span id="user-name"></span></p>
@@ -207,6 +186,25 @@
         </div>
     </div>
 
+    <!-- Lyrics Modal -->
+    <div id="lyrics-modal" class="modal">
+        <div class="modal-content lyrics-modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-music" style="margin-right: 10px;"></i>
+                    <span>Lyrics</span>
+                </h3>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="lyrics-content">
+                <div class="lyrics-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading lyrics...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Player Controls -->
     <div id="custom-player">
         <div class="player-left">
@@ -217,6 +215,9 @@
                     <p id="now-playing-artist">-</p>
                 </div>
             </div>
+            <button id="lyrics-btn" class="player-btn" title="Show Lyrics">
+                <i class="fas fa-microphone-alt"></i>
+            </button>
         </div>
 
         <div class="player-center">
@@ -431,36 +432,8 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <script src="scripts/main.js"></script>
-    <script>
-        function handleCredentialResponse(response) {
-            const data = parseJwt(response.credential);
-            console.log("Google login success:", data);
-            document.getElementById("user-info").style.display = "block";
-            document.getElementById("user-name").textContent = data.name;
 
-            // Optionally hide sign-in button after login
-            document.querySelector(".g_id_signin").style.display = "none";
-        }
-
-        function logout() {
-            google.accounts.id.disableAutoSelect();
-            document.getElementById("user-info").style.display = "none";
-            document.querySelector(".g_id_signin").style.display = "block";
-            alert("You have been logged out.");
-        }
-
-        // Utility: Decode JWT token
-        function parseJwt(token) {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(
-                atob(base64).split('').map(function (c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join('')
-            );
-            return JSON.parse(jsonPayload);
-        }
-    </script>
-
+    <script src="scripts/main.js"></script>
+    <script src="scripts/lyrics.js"></script>
 </body>
 </html>

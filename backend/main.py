@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 import logging
+from lyrics_service import fetch_lyrics
 from models import Playlist, UserActivity
 from database import init_db
 from tortoise.contrib.fastapi import register_tortoise
@@ -276,6 +277,29 @@ async def download_android():
 async def download_setup():
     # Redirect to windows download by default for backward compatibility
     return await download_windows()
+
+@app.get("/lyrics/{song_name}")
+async def get_lyrics(song_name: str):
+    try:
+        # Clean up the song name (remove extension and format for search)
+        song_title = os.path.splitext(song_name)[0].replace("_", " ")
+        
+        # Fetch lyrics using the service
+        result = fetch_lyrics(song_title)
+        
+        if "error" in result:
+            return JSONResponse(
+                status_code=404,
+                content={"error": result["error"]}
+            )
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching lyrics: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
 
 @app.get("/recently-played")
 async def recently_played():

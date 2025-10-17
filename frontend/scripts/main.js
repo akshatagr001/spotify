@@ -165,32 +165,6 @@ if (document.readyState === 'loading') {
 } else {
     initHeaderNav();
 }
-// function onGoogleSignIn(googleUser) {
-//     // For Google Identity Services
-//     const credential = googleUser.credential;
-//     // Send this credential to your backend for verification and to create/get the user
-//     fetch(`${API_URL}/auth/google`, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ credential })
-//     })
-//     .then(res => res.json())
-//     .then(data => {
-//         userToken = data.token; // JWT or session token from your backend
-//         userEmail = data.email;
-//         localStorage.setItem('userToken', userToken);
-//         localStorage.setItem('userEmail', userEmail);
-//         showNotification('Logged in successfully!', 'success');
-//         // Optionally hide login UI and show app UI
-//         // Reload user data (playlists, recommendations, etc.)
-//         fetchUserData();
-//     })
-//     .catch(() => showNotification('Login failed', 'error'));
-// }
-// Initialize hamburger menu functionality
-// document.addEventListener('DOMContentLoaded', function() {
-//     // This code has been replaced by the window.initMenu function
-// });
 
 // DOM element selections - moved all together
 const songListDiv = document.getElementById('song-list');
@@ -468,15 +442,14 @@ function updateProgressDisplay(percentage) {
     currentTimeEl.textContent = formatTime(percent * audioPlayer.duration / 100);
 }
 
-// Replace progress bar event listener
+
 
 // Update playSong function
 function playSong(index, forceList) {
     // Clean up previous audio source
     if (audioPlayer) {
         audioPlayer.pause();
-        // audioPlayer.removeAttribute('src');
-        // audioPlayer.load();
+        
     }
 
     const targetSongList = forceList || songList;
@@ -1857,12 +1830,7 @@ function showPlaylistSongs(playlist) {
         playlistView.classList.add('open');
     }
 
-    // Keep hamburger menu visible - DO NOT hide it
-    // const hamburgerMenu = document.querySelector('.hamburger-menu');
-    // if (hamburgerMenu) {
-    //     hamburgerMenu.style.display = 'none';
-    // }
-
+   
     playlistTitle.textContent = playlist.name || 'Playlist';
     playlistSongs.innerHTML = '';
     
