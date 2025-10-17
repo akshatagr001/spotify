@@ -46,23 +46,35 @@ def save_to_cache(song_title, data):
     except Exception as e:
         logger.error(f"Failed to cache lyrics for {song_title}: {e}")
 
+def detect_language(text):
+    """Detect if text contains Hindi characters."""
+    return bool(re.search(r'[\u0900-\u097F]', text))
+
 def clean_song_title(title):
     """Clean the song title for better search results."""
+    if not title:
+        return ""
+        
+    # Detect language
+    is_hindi = detect_language(title)
+    logger.info(f"Language detection for '{title}': Hindi = {is_hindi}")
+    
     # Remove file extensions
     title = re.sub(r'\.(mp3|m4a)$', '', title, flags=re.IGNORECASE)
     
-    # Remove common noise words and characters
-    title = re.sub(r'\b(official|video|audio|lyrics|hd|hq)\b', '', title, flags=re.IGNORECASE)
-    
-    # Remove text in brackets and parentheses
-    title = re.sub(r'\([^)]*\)|\[[^\]]*\]', '', title)
-    
-    # Remove feat., ft., etc.
-    title = re.sub(r'\b(feat\.?|ft\.?|featuring)\s+[^-]*', '', title, flags=re.IGNORECASE)
-    
-    # Clean up extra spaces and dashes
-    title = re.sub(r'\s+', ' ', title)
-    title = title.strip('- ')
+    if is_hindi:
+        # For Hindi songs, be more conservative with cleaning
+        title = re.sub(r'\b(official|video|audio|lyrics|hd|hq)\b', '', title, flags=re.IGNORECASE)
+        title = re.sub(r'\([^)]*\)|\[[^\]]*\]', '', title)
+        # Keep special characters for Hindi songs
+        title = ' '.join(title.split())  # Just normalize whitespace
+    else:
+        # For English songs, be more aggressive with cleaning
+        title = re.sub(r'\b(official|video|audio|lyrics|hd|hq)\b', '', title, flags=re.IGNORECASE)
+        title = re.sub(r'\([^)]*\)|\[[^\]]*\]', '', title)
+        title = re.sub(r'\b(feat\.?|ft\.?|featuring)\s+[^-]*', '', title, flags=re.IGNORECASE)
+        title = re.sub(r'[^\w\s-]', ' ', title)  # Remove special characters except hyphen
+        title = ' '.join(title.split())  # Normalize whitespace
     
     return title
 
@@ -85,21 +97,55 @@ def fetch_lyrics(song_title):
         # Prepare API request
         headers = {
             "Authorization": f"Bearer {GENIUS_API_KEY}",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
+
+        # Add common browser headers to avoid blocking
+        browser_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Cache-Control": "max-age=0"
+        }
+
         search_url = f"https://api.genius.com/search?q={quote(song_title)}"
         
-        # Search Genius API
-        logger.info(f"Searching Genius API: {search_url}")
-        response = requests.get(search_url, headers=headers)
-        response.raise_for_status()
+        # Search Genius API with retries
+        max_retries = 3
+        retry_delay = 1  # seconds
         
-        data = response.json()
-        hits = data.get("response", {}).get("hits", [])
-        
-        if not hits:
-            logger.warning(f"No results found for: {song_title}")
-            return {"error": f"No lyrics found for '{song_title}'"}
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Searching Genius API (attempt {attempt + 1}): {search_url}")
+                response = requests.get(search_url, headers=headers, timeout=10)
+                response.raise_for_status()
+                
+                data = response.json()
+                hits = data.get("response", {}).get("hits", [])
+                
+                if hits:
+                    break
+                    
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    continue
+                    
+                logger.warning(f"No results found for: {song_title} after {max_retries} attempts")
+                return {"error": f"No lyrics found for '{song_title}'"}
+                
+            except requests.exceptions.RequestException as e:
+                if attempt < max_retries - 1:
+                    logger.warning(f"Attempt {attempt + 1} failed: {e}")
+                    time.sleep(retry_delay)
+                    continue
+                raise
 
         # Get first result
         first_hit = hits[0]["result"]
@@ -108,12 +154,32 @@ def fetch_lyrics(song_title):
         
         logger.info(f"Found song: {song_title} at {song_url}")
 
-        # Fetch lyrics page
-        page = requests.get(
-            song_url,
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        )
-        page.raise_for_status()
+        # Function to fetch page with retries
+        def fetch_page_with_retries(url, max_retries=3, delay=1):
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Fetching lyrics page (attempt {attempt + 1}): {url}")
+                    session = requests.Session()
+                    
+                    # First, make a HEAD request to get cookies
+                    session.head(url, headers=browser_headers, timeout=10)
+                    
+                    # Then get the actual page
+                    page = session.get(url, headers=browser_headers, timeout=10)
+                    page.raise_for_status()
+                    return page
+                except requests.exceptions.RequestException as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Page fetch attempt {attempt + 1} failed: {e}")
+                        time.sleep(delay)
+                        continue
+                    raise
+            return None
+
+        # Fetch lyrics page with retry mechanism
+        page = fetch_page_with_retries(song_url)
+        if not page:
+            return {"error": f"Failed to fetch lyrics page after multiple attempts"}
         
         soup = BeautifulSoup(page.text, "html.parser")
         
@@ -123,11 +189,17 @@ def fetch_lyrics(song_title):
         # Method 1: New Genius format
         lyrics_containers = soup.find_all("div", attrs={"data-lyrics-container": "true"})
         if lyrics_containers:
-            lyrics = "\n\n".join([div.get_text(separator="\n").strip() for div in lyrics_containers])
+            lyrics = "\n\n".join([container.get_text(separator="\n").strip() for container in lyrics_containers])
             
         # Method 2: Old Genius format
         if not lyrics:
             lyrics_div = soup.find("div", class_="lyrics")
+            if lyrics_div:
+                lyrics = lyrics_div.get_text(separator="\n").strip()
+                
+        # Method 3: Alternative container format
+        if not lyrics:
+            lyrics_div = soup.find("div", class_="Lyrics__Container-sc-1ynbvzw-6")
             if lyrics_div:
                 lyrics = lyrics_div.get_text(separator="\n").strip()
 
