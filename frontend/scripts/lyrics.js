@@ -97,11 +97,14 @@ async function fetchLyrics(songTitle) {
         console.group(`Fetching lyrics for: ${songTitle}`);
         console.log('Generated alternatives:', alternatives);
         
-        // Try each alternative title
+    // Determine API base: prefer configured backend URL (window.API_URL) if present
+    const API_BASE = (typeof window !== 'undefined' && window.API_URL) ? window.API_URL.replace(/\/$/, '') : '';
+
+    // Try each alternative title
         for (const title of alternatives) {
             try {
                 const encodedTitle = encodeURIComponent(title);
-                const url = `/api/lyrics?title=${encodedTitle}`;
+        const url = API_BASE ? `${API_BASE}/api/lyrics?title=${encodedTitle}` : `/api/lyrics?title=${encodedTitle}`;
                 console.group(`Attempt: ${title}`);
                 console.log('Request URL:', url);
                 
@@ -352,7 +355,8 @@ async function testLyricsBackend() {
         try {
             console.group(`Testing: ${title}`);
             const encodedTitle = encodeURIComponent(title);
-            const url = `${API_URL}/lyrics/${encodedTitle}`;
+            const API_BASE = (typeof window !== 'undefined' && window.API_URL) ? window.API_URL.replace(/\/$/, '') : '';
+            const url = API_BASE ? `${API_BASE}/api/lyrics?title=${encodedTitle}` : `/api/lyrics?title=${encodedTitle}`;
             console.log('Request URL:', url);
             
             const response = await fetch(url);
