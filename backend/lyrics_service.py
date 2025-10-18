@@ -160,12 +160,29 @@ def fetch_lyrics(song_title):
                 try:
                     logger.info(f"Fetching lyrics page (attempt {attempt + 1}): {url}")
                     session = requests.Session()
-                    
-                    # First, make a HEAD request to get cookies
-                    session.head(url, headers=browser_headers, timeout=10)
-                    
+
+                    # Make headers more browser-like and include a Referer
+                    fetch_headers = browser_headers.copy()
+                    fetch_headers.update({
+                        "Referer": "https://genius.com/",
+                        # Client hints (may help bypass simple bot checks)
+                        "sec-ch-ua": '"Chromium";v="116", "Not)A;Brand";v="24"',
+                        "sec-ch-ua-mobile": "?0",
+                        "sec-ch-ua-platform": '"Windows"',
+                    })
+
+                    # Use the session to persist cookies and headers
+                    session.headers.update(fetch_headers)
+
+                    # First, make a HEAD request to warm up cookies (some sites respond differently)
+                    try:
+                        session.head(url, timeout=10)
+                    except requests.exceptions.RequestException:
+                        # Non-fatal: continue to GET which will surface the real status
+                        pass
+
                     # Then get the actual page
-                    page = session.get(url, headers=browser_headers, timeout=10)
+                    page = session.get(url, timeout=10)
                     page.raise_for_status()
                     return page
                 except requests.exceptions.RequestException as e:
@@ -173,11 +190,46 @@ def fetch_lyrics(song_title):
                         logger.warning(f"Page fetch attempt {attempt + 1} failed: {e}")
                         time.sleep(delay)
                         continue
+                    # If we've exhausted retries, re-raise so outer handler can decide
                     raise
             return None
 
+        # Fallback: try to fetch via a text-proxy if direct requests are blocked (e.g., 403)
+        def fetch_via_text_proxy(url):
+            try:
+                logger.info(f"Attempting fallback proxy fetch for: {url}")
+                # Use jina.ai text proxy which fetches and returns a textified version of the page
+                # Construct a proxy URL that proxies the target page
+                # Example: https://r.jina.ai/http://genius.com/... returns a text-based rendering
+                if url.startswith("https://"):
+                    proxy_target = url.replace("https://", "http://")
+                else:
+                    proxy_target = url
+                proxy_url = f"https://r.jina.ai/http://{proxy_target.lstrip('http://').lstrip('https://')}"
+                resp = requests.get(proxy_url, headers={"User-Agent": browser_headers.get("User-Agent")}, timeout=15)
+                resp.raise_for_status()
+                # Wrap the text response in a minimal object that mimics requests.Response
+                class SimplePage:
+                    def __init__(self, text, url):
+                        self.text = text
+                        self.url = url
+                return SimplePage(resp.text, url)
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Proxy fetch failed: {e}")
+                return None
+
         # Fetch lyrics page with retry mechanism
-        page = fetch_page_with_retries(song_url)
+        try:
+            page = fetch_page_with_retries(song_url)
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Direct fetch failed with exception: {e}")
+            page = None
+
+        # If direct fetch failed or returned None, try the text proxy fallback
+        if not page:
+            logger.info("Direct fetch failed or blocked; attempting proxy fallback")
+            page = fetch_via_text_proxy(song_url)
+
         if not page:
             return {"error": f"Failed to fetch lyrics page after multiple attempts"}
         
