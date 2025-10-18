@@ -333,6 +333,44 @@ async def get_lyrics(song_name: str, response: Response):
             content={"error": f"Failed to fetch lyrics: {str(e)}"}
         )
 
+
+@app.get("/api/lyrics")
+async def api_get_lyrics(title: str = None, artist: str = None, response: Response = None):
+    """API endpoint for frontend AJAX calls: /api/lyrics?title=...&artist=..."""
+    try:
+        if not title:
+            return JSONResponse(status_code=400, content={"error": "Missing 'title' query parameter", "success": False})
+
+        # Clean title similar to existing endpoint
+        cleaned_title = title.replace("-", " ").strip()
+        if cleaned_title.lower().endswith("mp3") or cleaned_title.lower().endswith("m4a"):
+            cleaned_title = os.path.splitext(cleaned_title)[0]
+
+        logger.info(f"API fetch lyrics for title: {cleaned_title}, artist: {artist}")
+
+        result = fetch_lyrics(cleaned_title)
+
+        # Set permissive CORS headers for AJAX
+        if response is not None:
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+
+        if "error" in result:
+            logger.warning(f"API lyrics not found for {cleaned_title}: {result['error']}")
+            return JSONResponse(content={"error": result["error"], "title": cleaned_title, "success": False})
+
+        return JSONResponse(content={
+            "lyrics": result.get("lyrics", ""),
+            "source_url": result.get("source_url", ""),
+            "title": result.get("title", cleaned_title),
+            "success": True
+        })
+
+    except Exception as e:
+        logger.error(f"Error in /api/lyrics: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": str(e), "success": False})
+
 @app.get("/recently-played")
 async def recently_played():
     try:
