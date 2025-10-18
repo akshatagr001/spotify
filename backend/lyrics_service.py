@@ -55,28 +55,50 @@ def clean_song_title(title):
     if not title:
         return ""
         
-    # Detect language
-    is_hindi = detect_language(title)
-    logger.info(f"Language detection for '{title}': Hindi = {is_hindi}")
-    
-    # Remove file extensions
+    # Store original for logging
+    original_title = title
+        
+    # Remove file extensions first
     title = re.sub(r'\.(mp3|m4a)$', '', title, flags=re.IGNORECASE)
     
-    if is_hindi:
-        # For Hindi songs, be more conservative with cleaning
-        title = re.sub(r'\b(official|video|audio|lyrics|hd|hq)\b', '', title, flags=re.IGNORECASE)
+    # Detect language after basic cleaning
+    contains_devanagari = bool(re.search(r'[\u0900-\u097F]', title))
+    contains_english = bool(re.search(r'[a-zA-Z]', title))
+    
+    logger.info(f"Language detection for '{title}': Hindi/Devanagari = {contains_devanagari}, English = {contains_english}")
+    
+    if contains_devanagari:
+        # For Hindi songs, preserve more of the original text
+        # Remove only clearly problematic parts
+        title = re.sub(r'\b(official|video|audio|full|hd|hq)\b', '', title, flags=re.IGNORECASE)
         title = re.sub(r'\([^)]*\)|\[[^\]]*\]', '', title)
-        # Keep special characters for Hindi songs
+        # Keep spaces, dashes, and quotes that might be part of the title
+        title = re.sub(r'["""'']', '', title )  # Remove smart quotes
         title = ' '.join(title.split())  # Just normalize whitespace
+        
+        # If title contains both scripts, generate both versions
+        if contains_english:
+            logger.info("Title contains both Hindi and English text")
+            # Split into words and group by script
+            words = title.split()
+            devanagari_words = [w for w in words if re.search(r'[\u0900-\u097F]', w)]
+            english_words = [w for w in words if re.search(r'[a-zA-Z]', w)]
+            
+            # Create alternative with only Devanagari words
+            if devanagari_words:
+                title = ' '.join(devanagari_words)
+                logger.info(f"Using Devanagari-only version: {title}")
     else:
-        # For English songs, be more aggressive with cleaning
-        title = re.sub(r'\b(official|video|audio|lyrics|hd|hq)\b', '', title, flags=re.IGNORECASE)
+        # For English/other songs, be more aggressive with cleaning
+        title = re.sub(r'\b(official|video|audio|full|lyrics|hd|hq)\b', '', title, flags=re.IGNORECASE)
         title = re.sub(r'\([^)]*\)|\[[^\]]*\]', '', title)
         title = re.sub(r'\b(feat\.?|ft\.?|featuring)\s+[^-]*', '', title, flags=re.IGNORECASE)
         title = re.sub(r'[^\w\s-]', ' ', title)  # Remove special characters except hyphen
         title = ' '.join(title.split())  # Normalize whitespace
     
-    return title
+    cleaned = title.strip()
+    logger.info(f"Title cleaning: {original_title} -> {cleaned}")
+    return cleaned
 
 def fetch_lyrics(song_title):
     """Fetch lyrics from Genius API with caching and better error handling."""
@@ -115,37 +137,61 @@ def fetch_lyrics(song_title):
             "Cache-Control": "max-age=0"
         }
 
-        search_url = f"https://api.genius.com/search?q={quote(song_title)}"
-        
-        # Search Genius API with retries
+        # Set up retry parameters
         max_retries = 3
         retry_delay = 1  # seconds
+
+        # Prepare search variations
+        search_variations = [song_title]
         
-        for attempt in range(max_retries):
-            try:
-                logger.info(f"Searching Genius API (attempt {attempt + 1}): {search_url}")
-                response = requests.get(search_url, headers=headers, timeout=10)
-                response.raise_for_status()
-                
-                data = response.json()
-                hits = data.get("response", {}).get("hits", [])
-                
-                if hits:
-                    break
+        # Add variations with 'lyrics' keyword
+        search_variations.append(f"{song_title} lyrics")
+        
+        # For Hindi songs, try with and without 'hindi lyrics'
+        if detect_language(original_title):
+            search_variations.extend([
+                f"{song_title} hindi lyrics",
+                f"{song_title} hindi song lyrics",
+                # Try without diacritics/special chars for Hindi titles
+                re.sub(r'[^\w\s]', '', song_title)
+            ])
+        
+        # Try each search variation
+        hits = []
+        for search_query in search_variations:
+            search_url = f"https://api.genius.com/search?q={quote(search_query)}"
+            logger.info(f"Trying search variation: {search_query}")
+            
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Searching Genius API (attempt {attempt + 1}): {search_url}")
+                    response = requests.get(search_url, headers=headers, timeout=10)
+                    response.raise_for_status()
                     
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay)
-                    continue
+                    data = response.json()
+                    hits = data.get("response", {}).get("hits", [])
                     
-                logger.warning(f"No results found for: {song_title} after {max_retries} attempts")
-                return {"error": f"No lyrics found for '{song_title}'"}
-                
-            except requests.exceptions.RequestException as e:
-                if attempt < max_retries - 1:
-                    logger.warning(f"Attempt {attempt + 1} failed: {e}")
-                    time.sleep(retry_delay)
-                    continue
-                raise
+                    if hits:
+                        logger.info(f"Found {len(hits)} results with variation: {search_query}")
+                        break
+                        
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                        continue
+                        
+                except requests.exceptions.RequestException as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Attempt {attempt + 1} failed: {e}")
+                        time.sleep(retry_delay)
+                        continue
+                    logger.error(f"All attempts failed for variation {search_query}: {e}")
+            
+            if hits:
+                break
+        
+        if not hits:
+            logger.warning(f"No results found for any variation of: {song_title}")
+            return {"error": f"No lyrics found for '{song_title}'"}
 
         # Get first result
         first_hit = hits[0]["result"]

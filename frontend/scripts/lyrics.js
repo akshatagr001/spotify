@@ -97,8 +97,8 @@ async function fetchLyrics(songTitle) {
         console.group(`Fetching lyrics for: ${songTitle}`);
         console.log('Generated alternatives:', alternatives);
         
-    // Determine API base: prefer configured backend URL (window.API_URL) if present
-    const API_BASE = (typeof window !== 'undefined' && window.API_URL) ? window.API_URL.replace(/\/$/, '') : '';
+        // Always use the backend URL for lyrics requests
+        const API_BASE = 'https://spotify-backend-6mr0.onrender.com';
 
     // Try each alternative title
         for (const title of alternatives) {
@@ -343,9 +343,11 @@ async function showLyricsModal() {
 // Test function to verify lyrics backend
 async function testLyricsBackend() {
     const testCases = [
-        'Shape of You',
-        'Hello',
-        'Apna Time Aayega'
+        'Dil Tu Hi Bataa',
+        'Tum Hi Ho',
+        'Apna Time Aayega',
+        'Shape of You',  // English song for comparison
+        'Vaaste'
     ];
     
     console.group('Lyrics Backend Test');
@@ -355,8 +357,9 @@ async function testLyricsBackend() {
         try {
             console.group(`Testing: ${title}`);
             const encodedTitle = encodeURIComponent(title);
-            const API_BASE = (typeof window !== 'undefined' && window.API_URL) ? window.API_URL.replace(/\/$/, '') : '';
-            const url = API_BASE ? `${API_BASE}/api/lyrics?title=${encodedTitle}` : `/api/lyrics?title=${encodedTitle}`;
+            // Always use the backend URL for lyrics requests
+            const API_BASE = 'https://spotify-backend-6mr0.onrender.com';
+            const url = `${API_BASE}/api/lyrics?title=${encodedTitle}`;
             console.log('Request URL:', url);
             
             const response = await fetch(url);
