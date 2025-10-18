@@ -296,11 +296,20 @@ async def get_lyrics(song_name: str, response: Response):
         # Fetch lyrics using the service
         result = fetch_lyrics(cleaned_title)
         
+        # Set CORS headers
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        
         if "error" in result:
             logger.warning(f"Lyrics not found for {cleaned_title}: {result['error']}")
+            # Return 200 status with error message instead of 404 to avoid CORS issues
             return JSONResponse(
-                status_code=404,
-                content={"error": result["error"]}
+                content={
+                    "error": result["error"],
+                    "title": cleaned_title,
+                    "success": False
+                }
             )
         
         # Log successful lyrics fetch
@@ -313,7 +322,8 @@ async def get_lyrics(song_name: str, response: Response):
             content={
                 "lyrics": result["lyrics"],
                 "source_url": result.get("source_url", ""),
-                "title": result.get("title", cleaned_title)
+                "title": result.get("title", cleaned_title),
+                "success": True
             }
         )
     except Exception as e:

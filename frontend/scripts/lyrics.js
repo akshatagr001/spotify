@@ -95,14 +95,13 @@ async function fetchLyrics(songTitle) {
         let attempts = [];
         
         console.group(`Fetching lyrics for: ${songTitle}`);
-        console.log('Backend URL:', API_URL);
         console.log('Generated alternatives:', alternatives);
         
         // Try each alternative title
         for (const title of alternatives) {
             try {
                 const encodedTitle = encodeURIComponent(title);
-                const url = `${API_URL}/lyrics/${encodedTitle}`;
+                const url = `/api/lyrics?title=${encodedTitle}`;
                 console.group(`Attempt: ${title}`);
                 console.log('Request URL:', url);
                 
@@ -130,15 +129,7 @@ async function fetchLyrics(songTitle) {
                 });
                 
                 if (response.ok) {
-                    const responseText = await response.text();
-                    let data;
-                    
-                    try {
-                        data = JSON.parse(responseText);
-                    } catch (e) {
-                        console.error('Invalid JSON response:', responseText);
-                        throw new Error('Invalid JSON response from server');
-                    }
+                    const data = await response.json();
                     
                     if (data.lyrics && data.lyrics.trim()) {
                         console.log('✅ Lyrics found!', {
@@ -148,21 +139,25 @@ async function fetchLyrics(songTitle) {
                         });
                         console.groupEnd();
                         console.groupEnd();
-                        return data;
+                        return {
+                            ...data,
+                            success: true,
+                            title: songTitle
+                        };
                     } else {
                         console.log('❌ Empty lyrics received');
                     }
                 } else {
-                    let errorText;
+                    let data;
                     try {
-                        errorText = await response.text();
-                    } catch (e) {
-                        errorText = 'Could not read error response';
+                        data = await response.json();
+                    } catch {
+                        data = { message: 'Could not read error response' };
                     }
                     console.log('❌ Request failed:', {
                         status: response.status,
                         statusText: statusText,
-                        error: errorText
+                        error: data.message
                     });
                 }
                 
@@ -183,29 +178,22 @@ async function fetchLyrics(songTitle) {
         console.log('⚠️ All attempts failed:', attempts);
         console.groupEnd();
         
-        // If we get here, no lyrics were found for any variation
-        throw new Error(`
-            <div class="lyrics-not-found">
-                <h3>Lyrics Not Found</h3>
-                <p>We couldn't find lyrics for "${songTitle}"</p>
-                <div class="lyrics-search-tips">
-                    <h4>Tips:</h4>
-                    <ul>
-                        <li>Check if the song title is spelled correctly</li>
-                        <li>Try searching without featuring artists</li>
-                        <li>Remove any special characters or version info</li>
-                        <li>Some songs might not have lyrics in our database</li>
-                    </ul>
-                </div>
-                <button onclick="searchLyricsManually('${encodeURIComponent(songTitle)}')" class="search-lyrics-btn">
-                    <i class="fas fa-search"></i> Search Manually
-                </button>
-            </div>
-        `);
+        // Return failure response
+        return {
+            success: false,
+            title: songTitle,
+            message: 'Could not find lyrics for any version of the song title',
+            attempts: attempts
+        };
         
     } catch (error) {
         console.error('Error fetching lyrics:', error);
-        throw error;
+        return {
+            success: false,
+            title: songTitle,
+            message: error.message || 'An unexpected error occurred',
+            error: error
+        };
     }
 }
 
@@ -220,19 +208,27 @@ window.searchLyricsManually = function(encodedTitle) {
 function updateLyricsContent(container, data) {
     if (!container) return;
 
-    if (!data.lyrics) {
+    // Store the current song title for the manual search button
+    const currentTitle = container.dataset.currentTitle || '';
+
+    // Check if we have a successful lyrics fetch
+    if (!data.success || !data.lyrics) {
         container.innerHTML = `
             <div class="lyrics-error">
                 <h3>No Lyrics Found</h3>
                 <p class="lyrics-error-details">
-                    We couldn't find lyrics for this song. You can:
+                    We couldn't find lyrics for "${data.title || currentTitle}"
                 </p>
-                <ul class="lyrics-error-tips">
-                    <li>Check if the song title is correct</li>
-                    <li>Try searching with a simpler version of the title</li>
-                    <li>Click below to search online</li>
-                </ul>
-                <button onclick="searchLyricsManually('${encodeURIComponent(container.dataset.currentTitle || '')}')" 
+                <div class="lyrics-search-tips">
+                    <h4>Tips:</h4>
+                    <ul>
+                        <li>Check if the song title is correct</li>
+                        <li>Try searching with a simpler version of the title</li>
+                        <li>Remove any special characters or version info</li>
+                        <li>Some songs might not have lyrics in our database</li>
+                    </ul>
+                </div>
+                <button onclick="searchLyricsManually('${encodeURIComponent(currentTitle)}')" 
                         class="search-lyrics-btn">
                     <i class="fas fa-search"></i> Search Online
                 </button>
@@ -241,6 +237,7 @@ function updateLyricsContent(container, data) {
         return;
     }
 
+    // We have lyrics, display them with the source if available
     container.innerHTML = `
         <div class="lyrics-text">
             <pre>${data.lyrics}</pre>
