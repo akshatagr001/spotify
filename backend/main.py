@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 import logging
-from lyrics_service import fetch_lyrics
 from models import Playlist, UserActivity
 from database import init_db
 from tortoise.contrib.fastapi import register_tortoise
@@ -277,99 +276,6 @@ async def download_android():
 async def download_setup():
     # Redirect to windows download by default for backward compatibility
     return await download_windows()
-
-@app.get("/lyrics/{song_name}")
-async def get_lyrics(song_name: str, response: Response):
-    try:
-        # Clean up the song name (remove extension and format for search)
-        song_title = os.path.splitext(song_name)[0].replace("_", " ")
-        logger.info(f"Fetching lyrics for song: {song_title}")
-        
-        # Additional cleaning for better search results
-        cleaned_title = song_title.replace("-", " ").strip()
-        if cleaned_title.lower().endswith("mp3") or cleaned_title.lower().endswith("m4a"):
-            cleaned_title = os.path.splitext(cleaned_title)[0]
-        
-        # Log the cleaned title
-        logger.info(f"Cleaned song title for lyrics search: {cleaned_title}")
-        
-        # Fetch lyrics using the service
-        result = fetch_lyrics(cleaned_title)
-        
-        # Set CORS headers
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        
-        if "error" in result:
-            logger.warning(f"Lyrics not found for {cleaned_title}: {result['error']}")
-            # Return 200 status with error message instead of 404 to avoid CORS issues
-            return JSONResponse(
-                content={
-                    "error": result["error"],
-                    "title": cleaned_title,
-                    "success": False
-                }
-            )
-        
-        # Log successful lyrics fetch
-        logger.info(f"Successfully fetched lyrics for {cleaned_title}")
-        
-        # Set cache headers
-        response.headers["Cache-Control"] = "public, max-age=86400"  # Cache for 24 hours
-        
-        return JSONResponse(
-            content={
-                "lyrics": result["lyrics"],
-                "source_url": result.get("source_url", ""),
-                "title": result.get("title", cleaned_title),
-                "success": True
-            }
-        )
-    except Exception as e:
-        logger.error(f"Error fetching lyrics for {song_name}: {str(e)}", exc_info=True)
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Failed to fetch lyrics: {str(e)}"}
-        )
-
-
-@app.get("/api/lyrics")
-async def api_get_lyrics(title: str = None, artist: str = None, response: Response = None):
-    """API endpoint for frontend AJAX calls: /api/lyrics?title=...&artist=..."""
-    try:
-        if not title:
-            return JSONResponse(status_code=400, content={"error": "Missing 'title' query parameter", "success": False})
-
-        # Clean title similar to existing endpoint
-        cleaned_title = title.replace("-", " ").strip()
-        if cleaned_title.lower().endswith("mp3") or cleaned_title.lower().endswith("m4a"):
-            cleaned_title = os.path.splitext(cleaned_title)[0]
-
-        logger.info(f"API fetch lyrics for title: {cleaned_title}, artist: {artist}")
-
-        result = fetch_lyrics(cleaned_title)
-
-        # Set permissive CORS headers for AJAX
-        if response is not None:
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-
-        if "error" in result:
-            logger.warning(f"API lyrics not found for {cleaned_title}: {result['error']}")
-            return JSONResponse(content={"error": result["error"], "title": cleaned_title, "success": False})
-
-        return JSONResponse(content={
-            "lyrics": result.get("lyrics", ""),
-            "source_url": result.get("source_url", ""),
-            "title": result.get("title", cleaned_title),
-            "success": True
-        })
-
-    except Exception as e:
-        logger.error(f"Error in /api/lyrics: {e}", exc_info=True)
-        return JSONResponse(status_code=500, content={"error": str(e), "success": False})
 
 @app.get("/recently-played")
 async def recently_played():

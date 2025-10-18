@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/modals.css">
     <link rel="stylesheet" href="styles/settings-modal.css">
-    <link rel="stylesheet" href="styles/lyrics.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -102,38 +101,6 @@
             </button>
         </div>
     </div>
-    
-        <!-- Display logged-in user info -->
-        <div id="user-info" style="display:none; margin-top: 10px;">
-            <p>👋 Welcome, <span id="user-name"></span></p>
-            <button onclick="logout()" class="btn btn-secondary">Logout</button>
-        </div>
-    </div>
-
-    <!-- Add Lyrics Drawer -->
-    <div id="lyrics-drawer" class="drawer lyrics-drawer">
-        <div class="drawer-header">
-            <h2>Lyrics</h2>
-            <div class="drawer-actions">
-                <button class="close-drawer" id="close-lyrics-drawer"><i class="fas fa-times"></i></button>
-            </div>
-        </div>
-        <div id="lyrics-container" class="lyrics-container">
-            <div class="current-song-info">
-                <img id="lyrics-song-img" src="default.jpg" alt="Current Song">
-                <div class="song-details">
-                    <h3 id="lyrics-song-title">No song selected</h3>
-                    <p id="lyrics-song-artist">-</p>
-                </div>
-            </div>
-            <div id="lyrics-content-drawer" class="lyrics-content">
-                <div class="lyrics-loading">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading lyrics...</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Add Playlist Drawer -->
     <div id="playlist-drawer" class="playlist-drawer">
@@ -211,24 +178,6 @@
         </div>
     </div>
 
-    <!-- Lyrics Modal -->
-    <div id="lyrics-modal" class="modal">
-        <div class="modal-content lyrics-modal-content">
-            <div class="modal-header">
-                <h3>
-                    <i class="fas fa-music" style="margin-right: 10px;"></i>
-                    <span>Lyrics</span>
-                </h3>
-                <button class="close-modal"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body" id="lyrics-content">
-                <div class="lyrics-loading">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading lyrics...</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Player Controls -->
     <div id="custom-player">
@@ -240,9 +189,7 @@
                     <p id="now-playing-artist">-</p>
                 </div>
             </div>
-            <button id="lyrics-btn" class="player-btn" title="Show Lyrics">
-                <i class="fas fa-microphone-alt"></i>
-            </button>
+           
         </div>
 
         <div class="player-center">
@@ -457,6 +404,8 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
     <script src="scripts/main.js"></script>
-    <script src="scripts/lyrics.js"></script>
+
+    <script src="scripts/main.js"></script>
+   
 </body>
 </html>
